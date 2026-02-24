@@ -1,0 +1,165 @@
+/* --------------------
+   Global
+-------------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background: #f4f6f8;
+  color: #1f2937;
+  display: block;
+  place-items: inherit;
+}
+
+/* --------------------
+   App Layout
+-------------------- */
+.app-shell {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* --------------------
+   Page Content
+-------------------- */
+.page-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Page Header */
+.page-header-box {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-header-box h1 {
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.page-header-box p {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* --------------------
+   KPI Cards
+-------------------- */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.kpi-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 22px;
+   transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kpi-header span {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.arrow {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transform: rotate(45deg);
+}
+
+.kpi-card h2 {
+  margin-top: 18px;
+  font-size: 40px;
+  font-weight: 600;
+}
+
+.kpi-card p {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.positive {
+  color: #16a34a;
+}
+
+.neutral {
+  color: #6b7280;
+}
+
+.kpi-card:hover {
+  background: linear-gradient(135deg, #ff6d41, #ff9c7b);
+  color: #ffffff;
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(255, 109, 65, 0.25);
+}
+
+.kpi-card:hover .kpi-header span,
+.kpi-card:hover p {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.kpi-card:hover .arrow {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* --------------------
+   Responsive
+-------------------- */
+@media (max-width: 1024px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .app-shell {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-header-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}

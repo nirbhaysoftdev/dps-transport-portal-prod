@@ -1,0 +1,15 @@
+# Node
+node_modules/
+npm-debug.log
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Mac
+.DS_Store

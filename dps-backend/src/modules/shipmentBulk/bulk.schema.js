@@ -1,0 +1,15 @@
+export const REQUIRED_COLUMNS = [
+  "shipment_no",
+  "shipment_date",
+  "billing_doc_number",
+  "billing_date",
+  "chassis_no",
+  "material_no",
+  "dispatch_plant",
+  "delivery_location",
+  "state",
+  "dispatch_date",
+  "model",
+  "dealer_name",
+  "allocation_date",
+];

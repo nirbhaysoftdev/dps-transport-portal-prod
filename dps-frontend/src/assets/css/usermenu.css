@@ -1,0 +1,70 @@
+/* --------------------
+   User Menu Popup
+-------------------- */
+.user-menu-popup {
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  width: 200px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  border-bottom: 1px solid #eee;
+  font-weight: 600;
+  color: #ff6d41;
+}
+
+.close-btn {
+  padding: 0px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #ff6d41;
+  font-size: 17px;
+}
+
+.popup-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.popup-options li {
+  padding: 6px 15px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #555;
+  transition: background 0.2s;
+}
+
+.popup-options li:hover {
+  background: #ffe6dc;
+}
+
+.power-icon {
+  color: #ff6d41;
+  font-size: 18px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

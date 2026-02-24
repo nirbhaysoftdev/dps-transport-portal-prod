@@ -1,0 +1,144 @@
+/* --------------------
+   Sidebar
+-------------------- */
+.sidebar-box {
+  width: 260px;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+}
+/* Add hover effect */
+.sidebar-nav li:hover {
+  background: rgba(255, 109, 65, 0.1);
+  color: #ff6d41;
+}
+
+
+.logo-box img {
+  width: 140px;
+}
+.mobile-logo {
+  display: none;
+}
+.desktop-logo{
+  display: block;
+}
+
+.menu-label {
+  margin-top: 32px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.sidebar-nav {
+  list-style: none;
+  margin-top: 20px;
+}
+
+.sidebar-nav li {
+  padding: 12px 14px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  font-size: 15px;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.sidebar-nav li.active {
+  background: rgba(255, 109, 65, 0.1);
+  color: #ff6d41;
+  font-weight: 500;
+}
+
+
+
+/* --------------------
+   Tablet
+-------------------- */
+@media (max-width: 1024px) {
+  .sidebar-box {
+    width: 220px;
+  }
+}
+
+/* --------------------
+   Mobile
+-------------------- */
+@media (max-width: 768px) {
+
+  .menu-label {
+    display: none;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    gap: 8px;
+    margin-top: 0;
+  }
+
+  .sidebar-nav li {
+    margin-bottom: 0;
+    font-size: 14px;
+    padding: 8px 12px;
+    white-space: nowrap;
+  }
+   .sidebar-box {
+    display: none;
+  }
+
+  .sidebar-box.open {
+    display: block;
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 24px);
+    max-width: 360px;
+    z-index: 1000;
+    background: white;
+    border-radius: 18px;
+    padding: 24px 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  }
+}
+
+/* Extra small */
+@media (max-width: 480px) {
+  .sidebar-nav {
+    overflow-x: auto;
+  }
+
+  .sidebar-nav::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Hide mobile logo on desktop */
+
+
+@media (max-width: 768px) {
+  .desktop-logo{
+  display: none;
+}
+  /* Show mobile logo fixed at top */
+  .mobile-logo {
+    display: flex;
+    justify-content: center;
+    padding: 12px 0;
+    background: white;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1100; /* above sidebar popup */
+    border-bottom: 1px solid #eee;
+  }
+
+  /* Adjust sidebar popup position below logo */
+  .sidebar-box.open {
+    top: 60px; /* leave space for fixed logo */
+  }
+}
