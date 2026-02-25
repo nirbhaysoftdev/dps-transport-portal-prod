@@ -1,0 +1,400 @@
+/* ═══════════════════════════════════════════════════
+   ShipmentView.css — matches project design system
+   Inter font, #ff6d41 orange brand
+═══════════════════════════════════════════════════ */
+
+.sv-wrapper {
+  padding: 24px;
+  font-family: "Inter", system-ui, sans-serif;
+  background: #f6f7fb;
+  min-height: 100vh;
+}
+
+.sv-loading {
+  text-align: center;
+  padding: 80px;
+  color: #9ca3af;
+  font-size: 15px;
+}
+
+/* ── Top bar ────────────────────────────────────── */
+.sv-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.sv-back-btn {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sv-back-btn:hover { border-color: #ff6d41; color: #ff6d41; }
+
+.sv-topbar-right { display: flex; align-items: center; gap: 10px; }
+
+.sv-edit-btn {
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #ff6d41, #ff8a5b);
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.sv-edit-btn:hover { opacity: 0.85; }
+
+.sv-cancel-btn {
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sv-cancel-btn:hover { background: #f3f4f6; }
+
+.sv-save-btn {
+  padding: 8px 20px;
+  background: #16a34a;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 120px;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.sv-save-btn:hover:not(:disabled) { background: #15803d; }
+.sv-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.sv-saved-toast {
+  font-size: 13px;
+  font-weight: 500;
+  color: #16a34a;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  border-radius: 6px;
+  padding: 6px 12px;
+  animation: sv-fade-in 0.3s ease;
+}
+
+@keyframes sv-fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; } }
+
+/* ── Hero ───────────────────────────────────────── */
+.sv-hero {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.sv-hero-left { display: flex; align-items: center; gap: 12px; }
+
+.sv-hero-no {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.sv-status-badge {
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.sv-status-dispatched   { background: #ffedd5; color: #ea580c; }
+.sv-status-running      { background: #fff7ed; color: #c2410c; }
+.sv-status-delivered    { background: #dcfce7; color: #15803d; }
+.sv-status-accident     { background: #fee2e2; color: #b91c1c; }
+.sv-status-pending-approval { background: #fef9c3; color: #854d0e; }
+
+.sv-hero-route {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: #374151;
+  flex-wrap: wrap;
+}
+.sv-route-plant { font-weight: 600; color: #1f2937; }
+.sv-route-arrow { color: #9ca3af; }
+.sv-route-dest  { font-weight: 600; color: #1f2937; }
+.sv-route-km    { font-size: 12px; color: #9ca3af; background: #f3f4f6; border-radius: 999px; padding: 3px 10px; }
+
+/* ── Error ──────────────────────────────────────── */
+.sv-error {
+  margin-bottom: 16px;
+  padding: 10px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #dc2626;
+}
+
+/* ── Card grid ──────────────────────────────────── */
+.sv-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.sv-card-full { grid-column: 1 / -1; }
+
+@media (max-width: 700px) {
+  .sv-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Card ───────────────────────────────────────── */
+.sv-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.sv-card-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sv-editable-hint {
+  font-size: 10px;
+  font-weight: 500;
+  color: #ff6d41;
+  background: #fff7f3;
+  border: 1px solid #ffcdb8;
+  border-radius: 999px;
+  padding: 2px 8px;
+  letter-spacing: 0;
+}
+
+/* ── Info rows ──────────────────────────────────── */
+.sv-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px solid #f9fafb;
+  gap: 12px;
+}
+.sv-info-row:last-child { border-bottom: none; }
+
+.sv-info-label {
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.sv-info-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f2937;
+  text-align: right;
+}
+.sv-na { color: #d1d5db; font-weight: 400; }
+
+/* ── Edit fields ────────────────────────────────── */
+.sv-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.sv-edit-field:last-child { margin-bottom: 0; }
+
+.sv-edit-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sv-edit-input {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 13px;
+  color: #1f2937;
+  background: #fff;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.sv-edit-input:focus {
+  border-color: #ff6d41;
+  box-shadow: 0 0 0 3px rgba(255,109,65,0.1);
+}
+
+/* ── Pump rows ──────────────────────────────────── */
+.sv-pump-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.sv-pump-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  width: 76px;
+  flex-shrink: 0;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.sv-pump-inputs {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.sv-pump-inputs .sv-edit-field { margin-bottom: 0; flex: 1; min-width: 100px; }
+
+.sv-pump-total {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  min-width: 90px;
+  text-align: right;
+}
+
+.sv-fuel-total {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: #fff7f3;
+  border: 1px solid #ffcdb8;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #374151;
+  text-align: right;
+}
+
+/* ── Fuel read-only grid ────────────────────────── */
+.sv-fuel-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.sv-fuel-cell {
+  padding: 10px 14px;
+  background: #f9fafb;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sv-fuel-cell-label { font-size: 11px; color: #9ca3af; font-weight: 600; text-transform: uppercase; }
+.sv-fuel-cell-val   { font-size: 13px; font-weight: 500; color: #1f2937; }
+
+/* ── Tax grids ──────────────────────────────────── */
+.sv-tax-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.sv-tax-cell {
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.sv-tax-label { font-size: 12px; color: #6b7280; }
+.sv-tax-val   { font-size: 13px; font-weight: 600; color: #1f2937; }
+
+.sv-tax-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.sv-remove-tax {
+  background: none;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  border-radius: 6px;
+  width: 32px;
+  height: 38px;
+  cursor: pointer;
+  font-size: 13px;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.sv-remove-tax:hover { background: #fee2e2; }
+
+.sv-add-tax-btn {
+  margin-top: 8px;
+  padding: 8px 16px;
+  background: #fff7f3;
+  border: 1px dashed #ff6d41;
+  border-radius: 8px;
+  color: #ff6d41;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.sv-add-tax-btn:hover { background: #ffede6; }
+
+/* ── Spinner ────────────────────────────────────── */
+.sv-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: sv-spin 0.7s linear infinite;
+}
+@keyframes sv-spin { to { transform: rotate(360deg); } }

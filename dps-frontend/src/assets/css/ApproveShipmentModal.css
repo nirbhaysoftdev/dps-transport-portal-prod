@@ -1,0 +1,254 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+/* ── Overlay ─────────────────────────────────────── */
+.asm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 14, 20, 0.72);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px 24px;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+/* ── Modal ───────────────────────────────────────── */
+.asm-modal {
+  background: #fff;
+  border: 1.5px solid #d1d5db;
+  border-top: 4px solid #1d4ed8;
+  border-radius: 6px;
+  width: 100%;
+  max-width: 860px;
+  display: flex;
+  flex-direction: column;
+  font-family: 'IBM Plex Sans', sans-serif;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.16);
+}
+
+/* ── Header ──────────────────────────────────────── */
+.asm-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+.asm-header-left { display: flex; flex-direction: column; gap: 4px; }
+
+.asm-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 3px;
+  padding: 2px 8px;
+  width: fit-content;
+}
+
+.asm-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.asm-close {
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.asm-close:hover { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
+
+/* ── Raw strip ───────────────────────────────────── */
+.asm-raw-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 24px;
+  background: #f0f9ff;
+  border-bottom: 1px solid #bae6fd;
+}
+.asm-raw-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: #0369a1;
+  flex-shrink: 0;
+}
+.asm-raw-chip {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: #0c4a6e;
+  background: #e0f2fe;
+  border: 1px solid #7dd3fc;
+  border-radius: 3px;
+  padding: 2px 8px;
+}
+
+/* ── Body ────────────────────────────────────────── */
+.asm-body {
+  padding: 8px 24px 16px;
+  overflow-y: auto;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Section ─────────────────────────────────────── */
+.asm-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-top: 14px;
+}
+.asm-section-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #374151;
+  background: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 8px 14px;
+}
+.asm-section-body { padding: 14px; }
+
+/* ── Grids ───────────────────────────────────────── */
+.asm-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.asm-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.asm-grid-1 { display: grid; grid-template-columns: 200px; gap: 12px; }
+
+@media (max-width: 600px) {
+  .asm-grid-2, .asm-grid-3, .asm-grid-1 { grid-template-columns: 1fr; }
+}
+
+/* ── Field ───────────────────────────────────────── */
+.asm-field { display: flex; flex-direction: column; gap: 4px; }
+
+.asm-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.asm-required-star { color: #dc2626; margin-left: 2px; }
+
+.asm-input {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  color: #0f172a;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.asm-input:focus {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+}
+
+.asm-hint { font-size: 10px; color: #9ca3af; font-style: italic; }
+
+/* ── Match banner ────────────────────────────────── */
+.asm-match-banner {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: #166534;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 4px;
+  padding: 7px 12px;
+  margin-bottom: 12px;
+}
+
+/* ── Error ───────────────────────────────────────── */
+.asm-error {
+  margin: 0 24px 4px;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #dc2626;
+}
+
+/* ── Footer ──────────────────────────────────────── */
+.asm-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+
+.asm-btn-cancel {
+  height: 38px;
+  padding: 0 20px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.asm-btn-cancel:hover:not(:disabled) { background: #f3f4f6; border-color: #9ca3af; }
+
+.asm-btn-approve {
+  height: 38px;
+  padding: 0 24px;
+  background: #1d4ed8;
+  border: none;
+  border-radius: 4px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 210px;
+  transition: background 0.15s;
+}
+.asm-btn-approve:hover:not(:disabled) { background: #1e40af; }
+.asm-btn-approve:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Spinner ─────────────────────────────────────── */
+.asm-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: asm-spin 0.7s linear infinite;
+}
+@keyframes asm-spin { to { transform: rotate(360deg); } }

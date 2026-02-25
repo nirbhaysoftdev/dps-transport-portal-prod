@@ -7,6 +7,8 @@ import vehicleRoutes from "./modules/vehicles/vehicle.routes.js";
 import statusRoutes from "./modules/statuses/status.routes.js";
 import shipmentRoutes from "./modules/shipment/shipment.routes.js";
 import bulkRoutes from "./modules/shipmentBulk/bulk.routes.js";
+import driversRouter from "./modules/shipment/drivers.routes.js";
+app.use("/api/drivers", driversRouter);
 
 app.use("/api/shipments/bulk", bulkRoutes);
 
