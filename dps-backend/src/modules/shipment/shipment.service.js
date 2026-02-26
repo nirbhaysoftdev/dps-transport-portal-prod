@@ -473,3 +473,13 @@ export const insertShipment = async (data) => {
   );
   return result.insertId;
 };
+
+/* ================================================================
+   UPDATE POD PATH
+   ================================================================ */
+export const updatePodPath = async (shipmentId, podPath) => {
+  await db.query(
+    `UPDATE shipment SET pod_path = ? WHERE shipment_id = ?`,
+    [podPath, shipmentId]
+  );
+};

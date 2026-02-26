@@ -1,9 +1,11 @@
 import {
   getRouteByLocations, getVehicleById, insertShipment, getDriverRouteById,
-  getShipments, getShipmentById, updateShipment,
+  getShipments, getShipmentById, updateShipment, updatePodPath,
   getPendingShipments, approveShipment, rejectShipment,
   checkMasters, getAllDrivers,
 } from "./shipment.service.js";
+import path from "path";
+import fs from "fs";
 
 /* ── LIST ALL SHIPMENTS ─────────────────────────────────────────── */
 export const listShipments = async (req, res) => {
@@ -183,6 +185,50 @@ export const rejectPendingShipment = async (req, res) => {
     return res.json({ success: true, message: "Shipment rejected" });
   } catch (err) {
     console.error("❌ POST /shipments/reject:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+/* ── UPLOAD POD ─────────────────────────────────────────────────────
+   POST /api/shipments/:id/pod
+   multipart/form-data  field: "pod"
+   Validates type (jpg/jpeg/png) + size (≤300 KB) on backend too.
+*/
+export const uploadPod = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    const allowed   = ["image/jpeg", "image/jpg", "image/png"];
+    const maxBytes  = 300 * 1024;
+
+    if (!allowed.includes(req.file.mimetype)) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ success: false, message: "Only JPG, JPEG and PNG are allowed" });
+    }
+
+    if (req.file.size > maxBytes) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ success: false, message: `File too large. Max 300 KB (received ${(req.file.size / 1024).toFixed(0)} KB)` });
+    }
+
+    const shipmentId = req.params.id;
+    const ext        = path.extname(req.file.originalname).toLowerCase();
+    const filename   = `pod_${shipmentId}_${Date.now()}${ext}`;
+    const destDir    = path.resolve("src/uploads/pod");
+    const destPath   = path.join(destDir, filename);
+
+    // Ensure directory exists
+    fs.mkdirSync(destDir, { recursive: true });
+    fs.renameSync(req.file.path, destPath);
+
+    const podPath = `uploads/pod/${filename}`;
+    await updatePodPath(shipmentId, podPath);
+
+    return res.json({ success: true, pod_path: podPath });
+  } catch (err) {
+    console.error("❌ POST /shipments/:id/pod:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };

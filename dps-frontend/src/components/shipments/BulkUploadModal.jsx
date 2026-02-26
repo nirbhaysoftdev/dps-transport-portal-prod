@@ -1,40 +1,25 @@
 import { useState } from "react";
 import Papa from "papaparse";
+import "../../assets/css/BulkUploadModal.css";
 
-/* ------------------ CONFIG ------------------ */
+/* ── Required headers ───────────────────────────────────────────── */
 const REQUIRED_HEADERS = [
-  "shipment_no",
-  "shipment_date",
-  "billing_doc_number",
-  "billing_date",
-  "chassis_no",
-  "material_no",
-  "dispatch_location",
-  "delivery_location",
-  "state",
-  "allocation_date",
-  "dispatch_date",
-  "model",
-  "dealer_name",
+  "shipment_no", "shipment_date", "billing_doc_number", "billing_date",
+  "chassis_no", "material_no", "dispatch_location", "delivery_location",
+  "state", "allocation_date", "dispatch_date", "model", "dealer_name",
 ];
 
-/* ------------------ HELPERS ------------------ */
-const normalizeDate = (val) => {
-  if (!val) return null;
-  const d = new Date(val);
-  if (isNaN(d)) return null;
-  return d.toISOString().slice(0, 10);
-};
-
 export default function BulkUploadModal({ onClose, onSuccess }) {
-  const [rows, setRows] = useState([]);
+  const [rows, setRows]           = useState([]);
   const [headerError, setHeaderError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]     = useState(false);
+  const [summary, setSummary]     = useState(null); // post-commit summary
 
-  /* ------------------ FILE HANDLER ------------------ */
+  /* ── File handler ────────────────────────────────────────────── */
   const handleFile = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setSummary(null);
 
     Papa.parse(file, {
       header: true,
@@ -46,50 +31,34 @@ export default function BulkUploadModal({ onClose, onSuccess }) {
     });
   };
 
-  /* ------------------ HEADER VALIDATION ------------------ */
+  /* ── Header validation ───────────────────────────────────────── */
   const validateHeaders = (headers = []) => {
     const missing = REQUIRED_HEADERS.filter(h => !headers.includes(h));
-
     if (missing.length) {
       setHeaderError(`Missing required columns: ${missing.join(", ")}`);
       setRows([]);
       return false;
     }
-
     setHeaderError(null);
     return true;
   };
 
-  /* ------------------ ROW VALIDATION ------------------ */
+  /* ── Row validation (frontend only) ─────────────────────────── */
   const validateRows = (data = []) => {
     const shipmentSet = new Set();
 
     const processed = data.map((row, index) => {
-      let status = "READY"; // frontend-only state
+      let status = "READY";
       let reason = "";
 
-      // Normalize dates
-      // row.shipment_date = normalizeDate(row.shipment_date);
-      // row.billing_date = normalizeDate(row.billing_date);
-      // row.allocation_date = normalizeDate(row.allocation_date);
-      // row.dispatch_date = normalizeDate(row.dispatch_date);
-
-      // Required field check
       for (const field of REQUIRED_HEADERS) {
         if (!row[field]) {
-          status = "ERROR";
-          reason = `Missing ${field}`;
+          status  = "ERROR";
+          reason  = `Missing ${field}`;
           break;
         }
       }
 
-      // Date format validation
-      if (status !== "ERROR" && !row.dispatch_date) {
-        status = "ERROR";
-        reason = "Invalid dispatch_date format";
-      }
-
-      // Duplicate shipment_no in CSV
       if (status !== "ERROR") {
         if (shipmentSet.has(row.shipment_no)) {
           status = "ERROR";
@@ -99,37 +68,37 @@ export default function BulkUploadModal({ onClose, onSuccess }) {
         }
       }
 
-      return {
-        ...row,
-        _row: index + 2, // CSV row number
-        _status: status, // READY | ERROR
-        _reason: reason,
-      };
+      return { ...row, _row: index + 2, _status: status, _reason: reason };
     });
 
     setRows(processed);
   };
 
-  /* ------------------ COMMIT ------------------ */
+  /* ── Commit ──────────────────────────────────────────────────── */
   const commitUpload = async () => {
     setLoading(true);
+    setSummary(null);
     try {
       const validRows = rows.filter(r => r._status !== "ERROR");
 
-      const res = await fetch(
-        "http://localhost:4000/api/shipments/bulk/commit",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rows: validRows }),
-        }
-      );
+      const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/shipments/bulk/commit`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ rows: validRows }),
+      });
 
       const json = await res.json();
-      console.log("Bulk commit result:", json);
 
-      if (onSuccess) onSuccess();
-      onClose();
+      if (json.success) {
+        setSummary({
+          total:   json.inserted_count || 0,
+          active:  json.active_count   || 0,
+          pending: json.pending_count  || 0,
+          failed:  json.failed_count   || 0,
+        });
+        if (onSuccess) onSuccess();
+        // Don't close yet — let user read the summary
+      }
     } catch (err) {
       console.error("Bulk commit failed:", err);
     } finally {
@@ -137,66 +106,129 @@ export default function BulkUploadModal({ onClose, onSuccess }) {
     }
   };
 
-  /* ------------------ UI ------------------ */
+  const validCount = rows.filter(r => r._status !== "ERROR").length;
+  const errorCount = rows.filter(r => r._status === "ERROR").length;
+
+  /* ── UI ──────────────────────────────────────────────────────── */
   return (
-    <div className="modal-overlay">
-      <div className="modal-card max-w-6xl">
-        <div className="modal-header">
-          <h3>Bulk CSV Upload – Preview</h3>
-          <button onClick={onClose}>✕</button>
+    <div className="bum-overlay">
+      <div className="bum-modal">
+
+        {/* Header */}
+        <div className="bum-header">
+          <h3 className="bum-title">Bulk CSV Upload</h3>
+          <button className="bum-close" onClick={onClose}>✕</button>
         </div>
 
-        <div className="modal-body">
-          <input type="file" accept=".csv" onChange={handleFile} />
+        <div className="bum-body">
 
+          {/* File input */}
+          <label className="bum-file-area">
+            <input type="file" accept=".csv" onChange={handleFile} style={{ display: "none" }} />
+            <span className="bum-file-icon">📂</span>
+            <span className="bum-file-text">Click to choose a CSV file</span>
+            <span className="bum-file-hint">Must match template columns exactly</span>
+          </label>
+
+          {/* Header error */}
           {headerError && (
-            <div className="error-box">{headerError}</div>
+            <div className="bum-alert bum-alert-error">{headerError}</div>
           )}
 
+          {/* Row counts */}
+          {rows.length > 0 && !summary && (
+            <div className="bum-counts">
+              <span className="bum-count bum-count-total">Total: {rows.length}</span>
+              <span className="bum-count bum-count-ready">✓ Valid: {validCount}</span>
+              {errorCount > 0 && <span className="bum-count bum-count-error">✕ Errors: {errorCount}</span>}
+            </div>
+          )}
+
+          {/* Post-commit summary */}
+          {summary && (
+            <div className="bum-summary">
+              <div className="bum-summary-title">🎉 Upload Complete</div>
+              <div className="bum-summary-grid">
+                <div className="bum-summary-card bum-sc-total">
+                  <span className="bum-sc-num">{summary.total}</span>
+                  <span className="bum-sc-label">Total Uploaded</span>
+                </div>
+                <div className="bum-summary-card bum-sc-active">
+                  <span className="bum-sc-num">{summary.active}</span>
+                  <span className="bum-sc-label">Active Shipments</span>
+                </div>
+                <div className="bum-summary-card bum-sc-pending">
+                  <span className="bum-sc-num">{summary.pending}</span>
+                  <span className="bum-sc-label">Pending Approval</span>
+                </div>
+                {summary.failed > 0 && (
+                  <div className="bum-summary-card bum-sc-failed">
+                    <span className="bum-sc-num">{summary.failed}</span>
+                    <span className="bum-sc-label">Failed to Insert</span>
+                  </div>
+                )}
+              </div>
+              {summary.pending > 0 && (
+                <p className="bum-summary-note">
+                  ℹ {summary.pending} shipment{summary.pending !== 1 ? "s" : ""} need admin approval — route or vehicle not matched.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Preview table */}
           {rows.length > 0 && (
-            <table className="preview-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Shipment No</th>
-                  <th>Route</th>
-                  <th>Dispatch Date</th>
-                  <th>Preview Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(r => (
-                  <tr key={r._row}>
-                    <td>{r._row}</td>
-                    <td>{r.shipment_no}</td>
-                    <td>
-                      {r.dispatch_location} → {r.delivery_location}
-                    </td>
-                    <td>{r.dispatch_date || "—"}</td>
-                    <td>
-                      <span className={`badge ${r._status.toLowerCase()}`}>
-                        {r._status}
-                      </span>
-                      {r._reason && (
-                        <div className="muted">{r._reason}</div>
-                      )}
-                    </td>
+            <div className="bum-table-wrap">
+              <table className="bum-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Shipment No</th>
+                    <th>Route</th>
+                    <th>Dispatch Date</th>
+                    <th>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {rows.map(r => (
+                    <tr key={r._row} className={r._status === "ERROR" ? "bum-row-error" : ""}>
+                      <td>{r._row}</td>
+                      <td className="bum-shipno">{r.shipment_no}</td>
+                      <td>{r.dispatch_location} → {r.delivery_location}</td>
+                      <td>{r.dispatch_date || "—"}</td>
+                      <td>
+                        <span className={`bum-badge bum-badge-${r._status.toLowerCase()}`}>
+                          {r._status}
+                        </span>
+                        {r._reason && <div className="bum-reason">{r._reason}</div>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+        </div>
+
+        {/* Footer */}
+        <div className="bum-footer">
+          <button className="bum-btn-cancel" onClick={onClose}>
+            {summary ? "Close" : "Cancel"}
+          </button>
+          {!summary && (
+            <button
+              className="bum-btn-upload"
+              disabled={loading || validCount === 0}
+              onClick={commitUpload}
+            >
+              {loading
+                ? <><span className="bum-spinner" /> Uploading…</>
+                : `Upload ${validCount} Valid Row${validCount !== 1 ? "s" : ""}`}
+            </button>
           )}
         </div>
 
-        <div className="modal-footer">
-          <button onClick={onClose}>Cancel</button>
-          <button
-            disabled={loading || !rows.some(r => r._status !== "ERROR")}
-            onClick={commitUpload}
-          >
-            {loading ? "Uploading..." : "Upload Valid Rows"}
-          </button>
-        </div>
       </div>
     </div>
   );

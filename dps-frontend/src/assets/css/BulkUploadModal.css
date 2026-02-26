@@ -1,0 +1,299 @@
+/* ═══════════════════════════════════════════════════
+   BulkUploadModal.css  — project design system
+   Inter font, #ff6d41 orange brand
+═══════════════════════════════════════════════════ */
+
+.bum-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 24px 16px;
+}
+
+.bum-modal {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.18);
+  width: 100%;
+  max-width: 860px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  font-family: "Inter", system-ui, sans-serif;
+  animation: bum-in 0.22s ease;
+}
+
+@keyframes bum-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Header ──────────────────────────────────── */
+.bum-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.bum-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.bum-close {
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+.bum-close:hover { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
+
+/* ── Body ────────────────────────────────────── */
+.bum-body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── File area ───────────────────────────────── */
+.bum-file-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 2px dashed #e5e7eb;
+  border-radius: 12px;
+  padding: 28px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.bum-file-area:hover { border-color: #ff6d41; background: #fff7f3; }
+
+.bum-file-icon { font-size: 32px; }
+.bum-file-text { font-size: 14px; font-weight: 500; color: #374151; }
+.bum-file-hint { font-size: 12px; color: #9ca3af; }
+
+/* ── Alert ───────────────────────────────────── */
+.bum-alert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.bum-alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
+/* ── Row counts ──────────────────────────────── */
+.bum-counts {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bum-count {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+.bum-count-total   { background: #f3f4f6; color: #374151; }
+.bum-count-ready   { background: #dcfce7; color: #15803d; }
+.bum-count-error   { background: #fee2e2; color: #dc2626; }
+
+/* ── Post-commit summary ─────────────────────── */
+.bum-summary {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.bum-summary-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #15803d;
+  margin-bottom: 16px;
+}
+
+.bum-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.bum-summary-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid #e5e7eb;
+}
+
+.bum-sc-num {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+.bum-sc-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.bum-sc-total   .bum-sc-num { color: #374151; }
+.bum-sc-active  .bum-sc-num { color: #16a34a; }
+.bum-sc-pending .bum-sc-num { color: #d97706; }
+.bum-sc-failed  .bum-sc-num { color: #dc2626; }
+
+.bum-summary-note {
+  font-size: 13px;
+  color: #854d0e;
+  background: #fef9c3;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0;
+}
+
+/* ── Preview table ───────────────────────────── */
+.bum-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.bum-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.bum-table thead {
+  background: #f9fafb;
+}
+
+.bum-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.bum-table td {
+  padding: 11px 14px;
+  color: #374151;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.bum-table tbody tr:last-child td { border-bottom: none; }
+.bum-table tbody tr:hover { background: #fafafa; }
+.bum-row-error { background: #fff8f8 !important; }
+
+.bum-shipno { font-weight: 600; color: #1f2937; }
+
+/* ── Badges ──────────────────────────────────── */
+.bum-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.bum-badge-ready   { background: #dbeafe; color: #1d4ed8; }
+.bum-badge-error   { background: #fee2e2; color: #b91c1c; }
+.bum-badge-pending { background: #fef3c7; color: #92400e; }
+.bum-badge-valid   { background: #dcfce7; color: #15803d; }
+
+.bum-reason {
+  font-size: 11px;
+  color: #dc2626;
+  margin-top: 3px;
+}
+
+/* ── Footer ──────────────────────────────────── */
+.bum-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 0 0 16px 16px;
+}
+
+.bum-btn-cancel {
+  height: 38px;
+  padding: 0 18px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.bum-btn-cancel:hover { background: #f3f4f6; border-color: #9ca3af; }
+
+.bum-btn-upload {
+  height: 38px;
+  padding: 0 22px;
+  background: linear-gradient(135deg, #ff6d41, #ff8a5b);
+  border: none;
+  border-radius: 8px;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.15s;
+}
+.bum-btn-upload:hover:not(:disabled) { opacity: 0.87; }
+.bum-btn-upload:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.bum-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: bum-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes bum-spin { to { transform: rotate(360deg); } }

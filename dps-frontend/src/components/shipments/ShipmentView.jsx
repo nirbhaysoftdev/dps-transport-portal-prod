@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import "../../assets/css/ShipmentView.css";
+import { useEffect, useState, useRef } from "react";
+import "../../assets/css//ShipmentView.css";
 
 const STATE_TAX_COLUMNS = [
   { col: "ts_armed_forces_tax",   label: "TS Armed Forces" },
@@ -36,10 +36,21 @@ const STATE_TAX_COLUMNS = [
 
 const STATUSES = ["Dispatched", "Running", "Delivered", "Accident"];
 
+/* Fields required before Delivered status is allowed */
+const DELIVERED_REQUIRED = [
+  { key: "chassis_no",    label: "Chassis No" },
+  { key: "engine_no",     label: "Engine No" },
+  { key: "delivery_date", label: "Delivery Date" },
+];
+
+const MAX_POD_SIZE = 300 * 1024; // 300 KB
+const POD_ALLOWED  = ["image/jpeg", "image/jpg", "image/png"];
+
+/* ── Small helpers ──────────────────────────────────────────────── */
 const InfoRow = ({ label, value }) => (
   <div className="sv-info-row">
     <span className="sv-info-label">{label}</span>
-    <span className="sv-info-value">{value || <span className="sv-na">—</span>}</span>
+    <span className="sv-info-value">{value ?? <span className="sv-na">—</span>}</span>
   </div>
 );
 
@@ -58,9 +69,9 @@ const EditField = ({ label, name, value, onChange, type = "text", children }) =>
   </div>
 );
 
-const PumpRow = ({ pump, form, onChange }) => (
+const PumpRow = ({ pump, label, form, onChange }) => (
   <div className="sv-pump-row">
-    <span className="sv-pump-label">{pump}</span>
+    <span className="sv-pump-label">{label}</span>
     <div className="sv-pump-inputs">
       <div className="sv-edit-field">
         <label className="sv-edit-label">Qty (L)</label>
@@ -73,35 +84,42 @@ const PumpRow = ({ pump, form, onChange }) => (
           value={form[`${pump}_rate`] ?? ""} onChange={onChange} placeholder="0.00" />
       </div>
       <div className="sv-pump-total">
-        ₹{((Number(form[`${pump}_qty`] || 0)) * (Number(form[`${pump}_rate`] || 0))).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+        ₹{((Number(form[`${pump}_qty`] || 0)) * (Number(form[`${pump}_rate`] || 0)))
+          .toLocaleString("en-IN", { minimumFractionDigits: 2 })}
       </div>
     </div>
   </div>
 );
 
+/* ═══════════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+═══════════════════════════════════════════════════════════════════ */
 export default function ShipmentView({ shipmentId, onBack }) {
-  const [data, setData]       = useState(null);
+  const [data, setData]         = useState(null);
   const [editMode, setEditMode] = useState(false);
-  const [form, setForm]       = useState({});
-  const [saving, setSaving]   = useState(false);
-  const [saved, setSaved]     = useState(false);
-  const [error, setError]     = useState(null);
+  const [form, setForm]         = useState({});
+  const [saving, setSaving]     = useState(false);
+  const [saved, setSaved]       = useState(false);
+  const [error, setError]       = useState(null);
+  const [deliveredErrors, setDeliveredErrors] = useState([]);
+
+  // POD state
+  const [podFile, setPodFile]       = useState(null);   // File object
+  const [podPreview, setPodPreview] = useState(null);   // data URL for preview
+  const [podError, setPodError]     = useState(null);
+  const podInputRef = useRef();
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/api/shipments/${shipmentId}`)
       .then(r => r.json())
-      .then(j => {
-        setData(j.data);
-        initForm(j.data);
-      })
+      .then(j => { setData(j.data); initForm(j.data); })
       .catch(console.error);
   }, [shipmentId]);
 
   const initForm = (d) => {
     if (!d) return;
-    // Build taxes as an array of { col, label, amount } — only pre-existing non-null values
     const taxes = STATE_TAX_COLUMNS
-      .filter(({ col }) => d[col] != null && d[col] !== "" && Number(d[col]) > 0)
+      .filter(({ col }) => d[col] != null && Number(d[col]) > 0)
       .map(({ col, label }) => ({ col, label, amount: d[col] }));
 
     setForm({
@@ -110,58 +128,139 @@ export default function ShipmentView({ shipmentId, onBack }) {
       estimated_delivery_date: d.estimated_delivery_date?.slice(0, 10) || "",
       reason_for_delay:        d.reason_for_delay || "",
       communicate_to_alcop:    d.communicate_to_alcop || "",
-      pump1_qty: d.pump1_qty ?? "", pump1_rate: d.pump1_rate ?? "",
-      pump2_qty: d.pump2_qty ?? "", pump2_rate: d.pump2_rate ?? "",
-      pump3_qty: d.pump3_qty ?? "", pump3_rate: d.pump3_rate ?? "",
-      pump4_qty: d.pump4_qty ?? "", pump4_rate: d.pump4_rate ?? "",
-      fuel_card_qty: d.fuel_card_qty ?? "", fuel_card_rate: d.fuel_card_rate ?? "",
-      hsd_qty: d.hsd_qty ?? "", hsd_rate: d.hsd_rate ?? "",
+      pump1_qty:  d.pump1_qty  ?? "", pump1_rate:     d.pump1_rate     ?? "",
+      pump2_qty:  d.pump2_qty  ?? "", pump2_rate:     d.pump2_rate     ?? "",
+      pump3_qty:  d.pump3_qty  ?? "", pump3_rate:     d.pump3_rate     ?? "",
+      pump4_qty:  d.pump4_qty  ?? "", pump4_rate:     d.pump4_rate     ?? "",
+      fuel_card_qty:  d.fuel_card_qty  ?? "", fuel_card_rate:  d.fuel_card_rate  ?? "",
+      hsd_qty:        d.hsd_qty        ?? "", hsd_rate:        d.hsd_rate        ?? "",
       toll_manual: d.manual_toll_fix_toll ?? "",
-      toll_amount: d.toll_amount ?? "",
+      toll_amount: d.toll_amount         ?? "",
       taxes,
     });
+    // Reset POD state when reinitialising
+    setPodFile(null);
+    setPodPreview(d.pod_path ? `${import.meta.env.VITE_API_URL}/${d.pod_path}` : null);
+    setPodError(null);
   };
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
   const totalFuel = () => {
     const pumps = ["pump1","pump2","pump3","pump4","fuel_card","hsd"];
-    return pumps.reduce((sum, p) => sum + (Number(form[`${p}_qty`] || 0) * Number(form[`${p}_rate`] || 0)), 0);
+    return pumps.reduce((sum, p) =>
+      sum + (Number(form[`${p}_qty`] || 0) * Number(form[`${p}_rate`] || 0)), 0);
   };
 
+  /* ── POD file handler ──────────────────────────────────────────── */
+  const handlePodChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!POD_ALLOWED.includes(file.type)) {
+      setPodError("Only JPG, JPEG and PNG files are allowed.");
+      setPodFile(null);
+      e.target.value = "";
+      return;
+    }
+    if (file.size > MAX_POD_SIZE) {
+      setPodError(`File too large. Max size is 300 KB (current: ${(file.size / 1024).toFixed(0)} KB).`);
+      setPodFile(null);
+      e.target.value = "";
+      return;
+    }
+
+    setPodError(null);
+    setPodFile(file);
+    const reader = new FileReader();
+    reader.onload = ev => setPodPreview(ev.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  /* ── Delivered validation ──────────────────────────────────────── */
+  const validateDelivered = () => {
+    if (form.current_status !== "Delivered") return [];
+
+    const missing = [];
+
+    // Static fields on the shipment record itself
+    DELIVERED_REQUIRED.forEach(({ key, label }) => {
+      const val = key === "delivery_date" ? form[key] : data?.[key];
+      if (!val || String(val).trim() === "") missing.push(label);
+    });
+
+    // Toll: at least one toll field must be filled
+    const hasToll = Number(form.toll_manual) > 0 || Number(form.toll_amount) > 0;
+    if (!hasToll) missing.push("Toll (Manual Fix Toll or Toll Amount)");
+
+    // POD: either existing pod_path on record OR new file selected
+    const hasPod = (data?.pod_path && !podFile) || podFile;
+    if (!hasPod) missing.push("POD (Proof of Delivery image)");
+
+    return missing;
+  };
+
+  /* ── Save ──────────────────────────────────────────────────────── */
   const handleSave = async () => {
-    setSaving(true); setError(null);
+    setDeliveredErrors([]);
+    const missing = validateDelivered();
+    if (missing.length > 0) {
+      setDeliveredErrors(missing);
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
     try {
       const taxPayload = {};
-      (form.taxes || []).forEach(t => { if (t.col && t.amount !== "" && t.amount != null) taxPayload[t.col] = t.amount; });
+      (form.taxes || []).forEach(t => {
+        if (t.col && t.amount !== "" && t.amount != null) taxPayload[t.col] = t.amount;
+      });
+
+      // If POD file selected, upload it first via FormData
+      let podPath = data?.pod_path || null;
+      if (podFile) {
+        const fd = new FormData();
+        fd.append("pod", podFile);
+        fd.append("shipment_id", shipmentId);
+        const podRes  = await fetch(`${import.meta.env.VITE_API_URL}/api/shipments/${shipmentId}/pod`, {
+          method: "POST",
+          body: fd,
+        });
+        const podJson = await podRes.json();
+        if (!podRes.ok) throw new Error(podJson.message || "POD upload failed");
+        podPath = podJson.pod_path;
+      }
 
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/shipments/${shipmentId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           current_status:          form.current_status,
-          delivery_date:           form.delivery_date || null,
+          delivery_date:           form.delivery_date           || null,
           estimated_delivery_date: form.estimated_delivery_date || null,
-          reason_for_delay:        form.reason_for_delay || null,
-          communicate_to_alcop:    form.communicate_to_alcop || null,
-          pump1_rate: form.pump1_rate, pump1_qty: form.pump1_qty,
-          pump2_rate: form.pump2_rate, pump2_qty: form.pump2_qty,
-          pump3_rate: form.pump3_rate, pump3_qty: form.pump3_qty,
-          pump4_rate: form.pump4_rate, pump4_qty: form.pump4_qty,
-          fuel_card_qty: form.fuel_card_qty, fuel_card_rate: form.fuel_card_rate,
-          hsd_qty: form.hsd_qty, hsd_rate: form.hsd_rate,
+          reason_for_delay:        form.reason_for_delay        || null,
+          communicate_to_alcop:    form.communicate_to_alcop    || null,
+          pump1_rate:  form.pump1_rate,  pump1_qty:  form.pump1_qty,
+          pump2_rate:  form.pump2_rate,  pump2_qty:  form.pump2_qty,
+          pump3_rate:  form.pump3_rate,  pump3_qty:  form.pump3_qty,
+          pump4_rate:  form.pump4_rate,  pump4_qty:  form.pump4_qty,
+          fuel_card_qty:  form.fuel_card_qty,  fuel_card_rate:  form.fuel_card_rate,
+          hsd_qty:        form.hsd_qty,        hsd_rate:        form.hsd_rate,
           route_id: data.route_id,
           toll: { manual_toll_fix_toll: form.toll_manual, toll_amount: form.toll_amount },
           tax: taxPayload,
         }),
       });
+
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Save failed");
 
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
       setEditMode(false);
-      // Re-fetch to get fresh data
+
       const fresh = await fetch(`${import.meta.env.VITE_API_URL}/api/shipments/${shipmentId}`).then(r => r.json());
       setData(fresh.data);
       initForm(fresh.data);
@@ -173,11 +272,7 @@ export default function ShipmentView({ shipmentId, onBack }) {
   };
 
   if (!data) {
-    return (
-      <div className="sv-wrapper">
-        <div className="sv-loading">Loading shipment details…</div>
-      </div>
-    );
+    return <div className="sv-wrapper"><div className="sv-loading">Loading shipment details…</div></div>;
   }
 
   const statusClass = data.current_status?.toLowerCase().replace(/\s+/g, "-") || "";
@@ -190,10 +285,10 @@ export default function ShipmentView({ shipmentId, onBack }) {
         <div className="sv-topbar-right">
           {saved && <span className="sv-saved-toast">✓ Saved successfully</span>}
           {!editMode ? (
-            <button className="sv-edit-btn" onClick={() => setEditMode(true)}>✏ Edit</button>
+            <button className="sv-edit-btn" onClick={() => { setEditMode(true); setDeliveredErrors([]); }}>✏ Edit</button>
           ) : (
             <>
-              <button className="sv-cancel-btn" onClick={() => { setEditMode(false); initForm(data); }}>Cancel</button>
+              <button className="sv-cancel-btn" onClick={() => { setEditMode(false); initForm(data); setDeliveredErrors([]); }}>Cancel</button>
               <button className="sv-save-btn" onClick={handleSave} disabled={saving}>
                 {saving ? <span className="sv-spinner" /> : "Save Changes"}
               </button>
@@ -202,7 +297,7 @@ export default function ShipmentView({ shipmentId, onBack }) {
         </div>
       </div>
 
-      {/* Header card */}
+      {/* Hero */}
       <div className="sv-hero">
         <div className="sv-hero-left">
           <div className="sv-hero-no">#{data.shipment_no}</div>
@@ -216,23 +311,33 @@ export default function ShipmentView({ shipmentId, onBack }) {
         </div>
       </div>
 
+      {/* Delivered validation errors */}
+      {deliveredErrors.length > 0 && (
+        <div className="sv-delivered-block">
+          <div className="sv-delivered-title">⚠ Cannot mark as Delivered — please fill the following fields first:</div>
+          <ul className="sv-delivered-list">
+            {deliveredErrors.map(e => <li key={e}>{e}</li>)}
+          </ul>
+        </div>
+      )}
+
       {error && <div className="sv-error">⚠ {error}</div>}
 
       <div className="sv-grid">
 
-        {/* ── Shipment Info ── */}
+        {/* Shipment Info */}
         <div className="sv-card">
           <div className="sv-card-title">Shipment Details</div>
-          <InfoRow label="Shipment Date"   value={data.shipment_date ? new Date(data.shipment_date).toLocaleDateString("en-IN") : null} />
+          <InfoRow label="Shipment Date"   value={data.shipment_date    ? new Date(data.shipment_date).toLocaleDateString("en-IN")    : null} />
           <InfoRow label="Billing Doc No"  value={data.billing_doc_number} />
-          <InfoRow label="Billing Date"    value={data.billing_date ? new Date(data.billing_date).toLocaleDateString("en-IN") : null} />
+          <InfoRow label="Billing Date"    value={data.billing_date     ? new Date(data.billing_date).toLocaleDateString("en-IN")     : null} />
           <InfoRow label="Chassis No"      value={data.chassis_no} />
           <InfoRow label="Engine No"       value={data.engine_no} />
-          <InfoRow label="Allocation Date" value={data.allocation_date ? new Date(data.allocation_date).toLocaleDateString("en-IN") : null} />
-          <InfoRow label="Dispatch Date"   value={data.dispatch_date ? new Date(data.dispatch_date).toLocaleDateString("en-IN") : null} />
+          <InfoRow label="Allocation Date" value={data.allocation_date  ? new Date(data.allocation_date).toLocaleDateString("en-IN")  : null} />
+          <InfoRow label="Dispatch Date"   value={data.dispatch_date    ? new Date(data.dispatch_date).toLocaleDateString("en-IN")    : null} />
         </div>
 
-        {/* ── Status & Dates (editable) ── */}
+        {/* Status & Dates */}
         <div className="sv-card">
           <div className="sv-card-title">
             Status & Delivery
@@ -246,6 +351,13 @@ export default function ShipmentView({ shipmentId, onBack }) {
                   {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </EditField>
+
+              {form.current_status === "Delivered" && (
+                <div className="sv-delivered-hint">
+                  ℹ Chassis No, Engine No, Delivery Date, Toll and POD are required to save as Delivered.
+                </div>
+              )}
+
               <EditField label="Delivery Date"           name="delivery_date"           value={form.delivery_date}           onChange={handleChange} type="date" />
               <EditField label="Estimated Delivery Date" name="estimated_delivery_date" value={form.estimated_delivery_date} onChange={handleChange} type="date" />
               <EditField label="Reason for Delay"        name="reason_for_delay"        value={form.reason_for_delay}        onChange={handleChange} />
@@ -253,24 +365,24 @@ export default function ShipmentView({ shipmentId, onBack }) {
             </>
           ) : (
             <>
-              <InfoRow label="Status"                  value={data.current_status} />
-              <InfoRow label="Delivery Date"           value={data.delivery_date ? new Date(data.delivery_date).toLocaleDateString("en-IN") : null} />
-              <InfoRow label="Estimated Delivery"      value={data.estimated_delivery_date ? new Date(data.estimated_delivery_date).toLocaleDateString("en-IN") : null} />
-              <InfoRow label="Reason for Delay"        value={data.reason_for_delay} />
-              <InfoRow label="Communicate to ALCOP"    value={data.communicate_to_alcop} />
+              <InfoRow label="Status"               value={data.current_status} />
+              <InfoRow label="Delivery Date"        value={data.delivery_date           ? new Date(data.delivery_date).toLocaleDateString("en-IN")           : null} />
+              <InfoRow label="Estimated Delivery"   value={data.estimated_delivery_date ? new Date(data.estimated_delivery_date).toLocaleDateString("en-IN") : null} />
+              <InfoRow label="Reason for Delay"     value={data.reason_for_delay} />
+              <InfoRow label="Communicate to ALCOP" value={data.communicate_to_alcop} />
             </>
           )}
         </div>
 
-        {/* ── Route ── */}
+        {/* Route */}
         <div className="sv-card">
           <div className="sv-card-title">Route & Dealer</div>
-          <InfoRow label="Dealer"    value={data.dealer_name} />
-          <InfoRow label="State"     value={data.state} />
-          <InfoRow label="Distance"  value={data.km ? `${data.km} km` : null} />
+          <InfoRow label="Dealer"   value={data.dealer_name} />
+          <InfoRow label="State"    value={data.state} />
+          <InfoRow label="Distance" value={data.km ? `${data.km} km` : null} />
         </div>
 
-        {/* ── Vehicle ── */}
+        {/* Vehicle */}
         <div className="sv-card">
           <div className="sv-card-title">Vehicle</div>
           <InfoRow label="Material No" value={data.material_no} />
@@ -278,16 +390,16 @@ export default function ShipmentView({ shipmentId, onBack }) {
           <InfoRow label="Avg (km/L)"  value={data.avg} />
         </div>
 
-        {/* ── Driver ── */}
+        {/* Driver */}
         <div className="sv-card">
           <div className="sv-card-title">Driver</div>
-          <InfoRow label="Name"      value={data.driver_name} />
-          <InfoRow label="DL Number" value={data.driver_dl} />
-          <InfoRow label="Payment"   value={data.driver_payment ? `₹${Number(data.driver_payment).toLocaleString("en-IN")}` : null} />
-          <InfoRow label="Return Fare" value={data.return_fare ? `₹${Number(data.return_fare).toLocaleString("en-IN")}` : null} />
+          <InfoRow label="Name"        value={data.driver_name} />
+          <InfoRow label="DL Number"   value={data.driver_dl} />
+          <InfoRow label="Payment"     value={data.driver_payment ? `₹${Number(data.driver_payment).toLocaleString("en-IN")}` : null} />
+          <InfoRow label="Return Fare" value={data.return_fare    ? `₹${Number(data.return_fare).toLocaleString("en-IN")}`    : null} />
         </div>
 
-        {/* ── Toll (editable) ── */}
+        {/* Toll */}
         <div className="sv-card">
           <div className="sv-card-title">
             Toll
@@ -301,12 +413,72 @@ export default function ShipmentView({ shipmentId, onBack }) {
           ) : (
             <>
               <InfoRow label="Manual Fix Toll" value={data.manual_toll_fix_toll ? `₹${Number(data.manual_toll_fix_toll).toLocaleString("en-IN")}` : null} />
-              <InfoRow label="Toll Amount"     value={data.toll_amount ? `₹${Number(data.toll_amount).toLocaleString("en-IN")}` : null} />
+              <InfoRow label="Toll Amount"     value={data.toll_amount           ? `₹${Number(data.toll_amount).toLocaleString("en-IN")}`           : null} />
             </>
           )}
         </div>
 
-        {/* ── Fuel (editable, full width) ── */}
+        {/* POD — full width */}
+        <div className="sv-card sv-card-full">
+          <div className="sv-card-title">
+            Proof of Delivery (POD)
+            {editMode && <span className="sv-editable-hint">Editing</span>}
+          </div>
+
+          {editMode ? (
+            <div className="sv-pod-edit">
+              <label className="sv-pod-upload-area" onClick={() => podInputRef.current?.click()}>
+                {podPreview ? (
+                  <img src={podPreview} alt="POD preview" className="sv-pod-preview-img" />
+                ) : (
+                  <div className="sv-pod-placeholder">
+                    <span className="sv-pod-icon">📎</span>
+                    <span className="sv-pod-upload-text">Click to upload POD</span>
+                    <span className="sv-pod-upload-hint">JPG, JPEG, PNG · Max 300 KB</span>
+                  </div>
+                )}
+                <input
+                  ref={podInputRef}
+                  type="file"
+                  accept=".jpg,.jpeg,.png"
+                  style={{ display: "none" }}
+                  onChange={handlePodChange}
+                />
+              </label>
+
+              {podFile && (
+                <div className="sv-pod-file-info">
+                  <span>📄 {podFile.name}</span>
+                  <span className="sv-pod-size">{(podFile.size / 1024).toFixed(0)} KB</span>
+                  <button className="sv-pod-remove" onClick={() => {
+                    setPodFile(null);
+                    setPodPreview(data?.pod_path ? `${import.meta.env.VITE_API_URL}/${data.pod_path}` : null);
+                    if (podInputRef.current) podInputRef.current.value = "";
+                  }}>✕ Remove</button>
+                </div>
+              )}
+
+              {podError && <div className="sv-pod-error">⚠ {podError}</div>}
+            </div>
+          ) : (
+            <div className="sv-pod-view">
+              {data.pod_path ? (
+                <a href={`${import.meta.env.VITE_API_URL}/${data.pod_path}`} target="_blank" rel="noreferrer">
+                  <img
+                    src={`${import.meta.env.VITE_API_URL}/${data.pod_path}`}
+                    alt="Proof of Delivery"
+                    className="sv-pod-view-img"
+                  />
+                  <span className="sv-pod-view-link">View full image ↗</span>
+                </a>
+              ) : (
+                <p className="sv-na">No POD uploaded yet</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Fuel — full width */}
         <div className="sv-card sv-card-full">
           <div className="sv-card-title">
             Fuel Consumption
@@ -314,12 +486,16 @@ export default function ShipmentView({ shipmentId, onBack }) {
           </div>
           {editMode ? (
             <>
-              <PumpRow pump="pump1"     form={form} onChange={handleChange} />
-              <PumpRow pump="pump2"     form={form} onChange={handleChange} />
-              <PumpRow pump="pump3"     form={form} onChange={handleChange} />
-              <PumpRow pump="pump4"     form={form} onChange={handleChange} />
-              <PumpRow pump="fuel_card" form={form} onChange={handleChange} />
-              <PumpRow pump="hsd"       form={form} onChange={handleChange} />
+              {[
+                { pump: "pump1",     label: "Pump 1" },
+                { pump: "pump2",     label: "Pump 2" },
+                { pump: "pump3",     label: "Pump 3" },
+                { pump: "pump4",     label: "Pump 4" },
+                { pump: "fuel_card", label: "Fuel Card" },
+                { pump: "hsd",       label: "HSD" },
+              ].map(({ pump, label }) => (
+                <PumpRow key={pump} pump={pump} label={label} form={form} onChange={handleChange} />
+              ))}
               <div className="sv-fuel-total">
                 Total Fuel Cost: <strong>₹{totalFuel().toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong>
               </div>
@@ -337,7 +513,7 @@ export default function ShipmentView({ shipmentId, onBack }) {
                 <div key={key} className="sv-fuel-cell">
                   <span className="sv-fuel-cell-label">{label}</span>
                   <span className="sv-fuel-cell-val">
-                    {data[`${key}_qty`] > 0
+                    {Number(data[`${key}_qty`]) > 0
                       ? `${data[`${key}_qty`]} L @ ₹${data[`${key}_rate`]}`
                       : <span className="sv-na">—</span>}
                   </span>
@@ -347,7 +523,7 @@ export default function ShipmentView({ shipmentId, onBack }) {
           )}
         </div>
 
-        {/* ── State Taxes (editable, full width) ── */}
+        {/* State Taxes — full width */}
         <div className="sv-card sv-card-full">
           <div className="sv-card-title">
             State Taxes
