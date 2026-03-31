@@ -1,0 +1,2 @@
+shipment_no,shipment_date,billing_doc_number,billing_date,chassis_no,material_no,dispatch_plant,delivery_location,state,dispatch_date,model,dealer_name,allocation_date
+SHP001,26/03/2026,BILL001,26/03/2026,CHS12345,MAT001,Jamshedpur Plant,Kolkata,JH,27/03/2026,Nexon,Dealer A,25/03/2026

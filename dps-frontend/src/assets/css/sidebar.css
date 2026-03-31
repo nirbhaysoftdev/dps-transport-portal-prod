@@ -1,144 +1,468 @@
-/* --------------------
-   Sidebar
--------------------- */
-.sidebar-box {
-  width: 260px;
-  background: #ffffff;
-  border-radius: 18px;
-  padding: 24px 20px;
+/* ═══════════════════════════════════════════════════════════════════
+   SIDEBAR.CSS — DPS Fleet Flow
+   Design: Deep navy glass · Orange accent · Futuristic minimal
+   Font: Sora (display) + DM Sans (body)
+═══════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+/* ── Variables ──────────────────────────────────────────────────── */
+:root {
+  --sb-w-open:        248px;
+  --sb-w-closed:       72px;
+  --sb-bg:            #0f1221;
+  --sb-bg-glass:      rgba(15, 18, 33, 0.97);
+  --sb-border:        rgba(255,255,255,0.06);
+  --sb-accent:        #ff6d41;
+  --sb-accent-dim:    rgba(255, 109, 65, 0.12);
+  --sb-accent-glow:   rgba(255, 109, 65, 0.25);
+  --sb-text:          rgba(255,255,255,0.55);
+  --sb-text-active:   #ffffff;
+  --sb-text-hover:    rgba(255,255,255,0.85);
+  --sb-item-hover:    rgba(255,255,255,0.05);
+  --sb-item-active:   rgba(255, 109, 65, 0.10);
+  --sb-radius-item:   12px;
+  --sb-ease:          cubic-bezier(0.4, 0, 0.2, 1);
+  --sb-duration:      0.32s;
+}
+
+/* ── Root ───────────────────────────────────────────────────────── */
+.sb-root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  background: var(--sb-bg);
+  border-right: 1px solid var(--sb-border);
   display: flex;
   flex-direction: column;
-}
-/* Add hover effect */
-.sidebar-nav li:hover {
-  background: rgba(255, 109, 65, 0.1);
-  color: #ff6d41;
+  z-index: 200;
+  overflow: hidden;
+  font-family: "DM Sans", sans-serif;
+
+  /* The ONLY animation: width */
+  transition: width var(--sb-duration) var(--sb-ease);
+  will-change: width;
+
+  /* Subtle inner shadow for depth */
+  box-shadow:
+    1px 0 0 rgba(255,255,255,0.03),
+    4px 0 32px rgba(0,0,0,0.35);
 }
 
+.sb-expanded  { width: var(--sb-w-open); }
+.sb-collapsed { width: var(--sb-w-closed); }
 
-.logo-box img {
-  width: 140px;
-}
-.mobile-logo {
-  display: none;
-}
-.desktop-logo{
-  display: block;
+/* ── Accent bar (top neon line) ─────────────────────────────────── */
+.sb-accent-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--sb-accent) 40%, transparent);
+  opacity: 0.9;
+  z-index: 2;
+  pointer-events: none;
 }
 
-.menu-label {
-  margin-top: 32px;
-  font-size: 12px;
+/* ── Logo zone ──────────────────────────────────────────────────── */
+.sb-logo-zone {
+  padding: 22px 14px 18px;
+  display: flex;
+  align-items: center;
+  min-height: 80px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sb-logo-inner {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  width: 100%;
+}
+
+.sb-logo-full {
+  height: 52px;
+  width: auto;
+  object-fit: contain;
+  /* Invert to white for dark bg — remove this if your logo is already white */
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
+  flex-shrink: 0;
+
+  /* Fade in when expanding */
+  animation: sb-logo-appear 0.25s var(--sb-ease) forwards;
+}
+
+.sb-logo-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  
+  opacity: 0.9;
+  margin: 0 auto;
+  flex-shrink: 0;
+}
+
+@keyframes sb-logo-appear {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 0.92; transform: translateX(0); }
+}
+
+/* ── Section label row ──────────────────────────────────────────── */
+.sb-section-label-wrap {
+  padding: 0 16px 10px;
+  flex-shrink: 0;
+  height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+.sb-section-label {
+  font-family: "Sora", sans-serif;
+  font-size: 9.5px;
   font-weight: 600;
-  color: #9ca3af;
+  letter-spacing: 0.18em;
+  color: rgba(255,255,255,0.2);
+  text-transform: uppercase;
+  white-space: nowrap;
+  user-select: none;
 }
 
-.sidebar-nav {
+.sb-section-divider {
+  display: block;
+  width: 32px;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: 0 auto;
+}
+
+/* ── Nav ────────────────────────────────────────────────────────── */
+.sb-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 0 8px;
+  scrollbar-width: none;
+}
+.sb-nav::-webkit-scrollbar { display: none; }
+
+/* ── List ───────────────────────────────────────────────────────── */
+.sb-list {
   list-style: none;
-  margin-top: 20px;
+  margin: 0;
+  padding: 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
-.sidebar-nav li {
-  padding: 12px 14px;
-  border-radius: 12px;
-  margin-bottom: 8px;
-  font-size: 15px;
-  color: #6b7280;
+/* ── Item wrapper (relative for tooltip) ───────────────────────── */
+.sb-item-wrap {
+  position: relative;
+}
+
+/* ── Nav button ─────────────────────────────────────────────────── */
+.sb-item {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 10px;
+  border-radius: var(--sb-radius-item);
+  border: none;
+  background: transparent;
   cursor: pointer;
+  text-align: left;
+  color: var(--sb-text);
+  font-family: "DM Sans", sans-serif;
+  font-size: 13.5px;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    background 0.18s var(--sb-ease),
+    color 0.18s var(--sb-ease);
 }
 
-.sidebar-nav li.active {
-  background: rgba(255, 109, 65, 0.1);
-  color: #ff6d41;
+.sb-item:hover {
+  background: var(--sb-item-hover);
+  color: var(--sb-text-hover);
+}
+.sb-item:hover .sb-icon {
+  color: var(--sb-text-hover);
+}
+
+/* ── Active state ───────────────────────────────────────────────── */
+.sb-item--active {
+  background: var(--sb-item-active) !important;
+  color: var(--sb-text-active) !important;
   font-weight: 500;
 }
+.sb-item--active .sb-icon {
+  color: var(--sb-accent) !important;
+}
 
+/* ── Left pill accent on active ─────────────────────────────────── */
+.sb-pill {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 55%;
+  min-height: 18px;
+  background: var(--sb-accent);
+  border-radius: 0 3px 3px 0;
+  box-shadow: 0 0 10px var(--sb-accent-glow);
+}
 
+/* ── Icon ───────────────────────────────────────────────────────── */
+.sb-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: rgba(255,255,255,0.3);
+  transition: color 0.18s var(--sb-ease);
+}
 
-/* --------------------
-   Tablet
--------------------- */
-@media (max-width: 1024px) {
-  .sidebar-box {
-    width: 220px;
+.sb-icon--active {
+  color: var(--sb-accent) !important;
+  filter: drop-shadow(0 0 6px var(--sb-accent-glow));
+}
+
+.sb-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ── Label ──────────────────────────────────────────────────────── */
+.sb-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Width-based clip during collapse — opacity fade handled by parent */
+  max-width: 160px;
+  transition:
+    max-width var(--sb-duration) var(--sb-ease),
+    opacity var(--sb-duration) var(--sb-ease);
+}
+
+.sb-collapsed .sb-label {
+  max-width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sb-expanded .sb-label {
+  max-width: 160px;
+  opacity: 1;
+}
+
+/* ── Badges ─────────────────────────────────────────────────────── */
+.sb-badge {
+  flex-shrink: 0;
+  font-size: 9.5px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 7px;
+  line-height: 1.4;
+  font-family: "Sora", sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.sb-badge--alert {
+  background: rgba(255, 109, 65, 0.18);
+  color: #ff6d41;
+  border: 1px solid rgba(255, 109, 65, 0.35);
+}
+
+.sb-badge--reject {
+  background: rgba(239, 68, 68, 0.14);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-size: 8.5px;
+}
+
+/* ── Collapsed: centre items ─────────────────────────────────────── */
+.sb-collapsed .sb-item {
+  justify-content: center;
+  padding: 12px 0;
+  gap: 0;
+}
+
+.sb-collapsed .sb-icon {
+  width: 22px;
+  height: 22px;
+  margin: 0 auto;
+}
+
+.sb-collapsed .sb-list {
+  padding: 0 8px;
+}
+
+.sb-collapsed .sb-logo-zone {
+  padding: 22px 6px 18px;
+  justify-content: center;
+}
+
+.sb-collapsed .sb-logo-inner {
+  justify-content: center;
+}
+
+/* ── Tooltip ────────────────────────────────────────────────────── */
+.sb-tooltip {
+  position: absolute;
+  left: calc(var(--sb-w-closed) - 4px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1c2035;
+  border: 1px solid rgba(255,255,255,0.09);
+  color: rgba(255,255,255,0.9);
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 7px 13px;
+  border-radius: 9px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  /* Arrow */
+  &::before {
+    content: "";
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-right-color: #1c2035;
   }
 }
 
-/* --------------------
-   Mobile
--------------------- */
-@media (max-width: 768px) {
-
-  .menu-label {
-    display: none;
-  }
-
-  .sidebar-nav {
-    display: flex;
-    gap: 8px;
-    margin-top: 0;
-  }
-
-  .sidebar-nav li {
-    margin-bottom: 0;
-    font-size: 14px;
-    padding: 8px 12px;
-    white-space: nowrap;
-  }
-   .sidebar-box {
-    display: none;
-  }
-
-  .sidebar-box.open {
-    display: block;
-    position: fixed;
-    top: 60px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 24px);
-    max-width: 360px;
-    z-index: 1000;
-    background: white;
-    border-radius: 18px;
-    padding: 24px 20px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
-  }
+.sb-tooltip-dot {
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--sb-accent);
+  color: #fff;
+  border-radius: 999px;
+  padding: 1px 6px;
 }
 
-/* Extra small */
-@media (max-width: 480px) {
-  .sidebar-nav {
-    overflow-x: auto;
-  }
+/* ── Spacer ─────────────────────────────────────────────────────── */
+/* .sb-spacer { flex: 1; } */
 
-  .sidebar-nav::-webkit-scrollbar {
-    display: none;
-  }
+/* ── Footer / toggle zone ───────────────────────────────────────── */
+.sb-footer {
+  flex-shrink: 0;
+  padding: 8px 10px 20px;
 }
 
-/* Hide mobile logo on desktop */
-
-
-@media (max-width: 768px) {
-  .desktop-logo{
-  display: none;
+.sb-footer-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+  margin-bottom: 12px;
 }
-  /* Show mobile logo fixed at top */
-  .mobile-logo {
-    display: flex;
-    justify-content: center;
-    padding: 12px 0;
-    background: white;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1100; /* above sidebar popup */
-    border-bottom: 1px solid #eee;
-  }
 
-  /* Adjust sidebar popup position below logo */
-  .sidebar-box.open {
-    top: 60px; /* leave space for fixed logo */
+/* ── Toggle button — lives inside sidebar, no z-index conflict ── */
+.sb-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 11px;
+  border-radius: var(--sb-radius-item);
+  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  color: rgba(255,255,255,0.35);
+  font-family: "DM Sans", sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  transition:
+    background 0.18s var(--sb-ease),
+    color 0.18s var(--sb-ease),
+    border-color 0.18s var(--sb-ease);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.sb-toggle:hover {
+  background: var(--sb-accent-dim);
+  border-color: rgba(255, 109, 65, 0.3);
+  color: var(--sb-accent);
+}
+
+.sb-toggle:hover .sb-toggle-icon {
+  color: var(--sb-accent);
+}
+
+/* ── Collapsed toggle: centre the chevron ── */
+.sb-collapsed .sb-toggle {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.sb-collapsed .sb-footer {
+  padding: 8px 8px 20px;
+}
+
+.sb-toggle-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: rgba(255,255,255,0.3);
+  transition: color 0.18s var(--sb-ease);
+}
+
+.sb-toggle-text {
+  overflow: hidden;
+  max-width: 120px;
+  opacity: 1;
+  transition:
+    max-width var(--sb-duration) var(--sb-ease),
+    opacity var(--sb-duration) var(--sb-ease);
+}
+
+.sb-collapsed .sb-toggle-text {
+  max-width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── Chevron rotation animation ─────────────────────────────────── */
+.sb-chevron {
+  display: block;
+  transition: transform var(--sb-duration) var(--sb-ease);
+}
+.sb-chevron--left  { transform: rotate(0deg); }
+.sb-chevron--right { transform: rotate(180deg); }
+
+/* ── Main content offset — add to your AppLayout.jsx ────────────── */
+/* 
+  .main-content {
+    transition: margin-left 0.32s cubic-bezier(0.4,0,0.2,1);
   }
+  .main-content.expanded  { margin-left: 248px; }
+  .main-content.collapsed { margin-left: 72px; }
+*/
+
+/* ── Scrollbar ──────────────────────────────────────────────────── */
+.sb-nav {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.06) transparent;
 }

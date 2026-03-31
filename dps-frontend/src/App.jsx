@@ -1,24 +1,29 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Login from "./pages/login";
-import ProtectedRoute from "./ProtectedRoute";
+// src/App.jsx
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { appRoutes } from "./routes";
 import AppLayout from "./layout/AppLayout";
+import ProtectedRoute from "./ProtectedRoute";
+import RoleRoute from "./RoleRoute";
+import Login from "./pages/Login";
+import { getUser } from "./utils/apiClient";
 
-import RoleRoute from "./RoleRoute"; 
-
-import Dashboard from "./pages/dashboard";
-import Finance from "./pages/finance";
-import Shipments from "./pages/shipments";
-import PendingShipments from "./pages/PendingShipments";
-
+function DefaultRedirect() {
+  const user = getUser();
+  if (!user) return <Navigate to="/" replace />;
+  return <Navigate to={user.role === "finance" ? "/finance" : "/dashboard"} replace />;
+}
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Login */}
-        <Route path="/" element={<Login />} />
 
-        {/* EVERYTHING ELSE PROTECTED */}
+        {/* ── Public: Login at both / and /login ── */}
+        <Route path="/"      element={<Login />} />
+        <Route path="/login" element={<Login />} />
+
+        {/* ── Protected layout — pathless, wraps all app pages ── */}
         <Route
           element={
             <ProtectedRoute>
@@ -26,55 +31,24 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          {/* Dashboard → all roles */}
-          <Route
-            path="/dashboard"
-            element={
-              <RoleRoute allowedRoles={["Admin"]}>
-                <Dashboard />
-              </RoleRoute>
-            }
-          />
+          <Route path="/redirect" element={<DefaultRedirect />} />
 
-          {/* Finance → admin & finance only */}
-          <Route
-            path="/finance"
-            element={
-              <RoleRoute allowedRoles={["Admin", "Accounts" ]}>
-                <Finance />
-              </RoleRoute>
-            }
-          />
-             <Route
-            path="/shipments"
-            element={
-              <RoleRoute allowedRoles={["Admin", "Accounts" ]}>
-                <Shipments />
-              </RoleRoute>
-            }
-          />
-              <Route
-            path="/PendingShipments"
-            element={
-              <RoleRoute allowedRoles={["Admin", "Accounts" ]}>
-                <PendingShipments />
-              </RoleRoute>
-            }
-          />
-
-          {/* Tasks → all roles */}
-          {/* <Route
-            path="/tasks"
-            element={
-              <RoleRoute allowedRoles={["admin", "finance", "user"]}>
-                <Tasks />
-              </RoleRoute>
-            }
-          /> */}
-
-          {/* Add more pages safely with roles */}
-          {/* <Route path="/pageX" element={<RoleRoute allowedRoles={["admin"]}><PageX /></RoleRoute>} /> */}
+          {appRoutes.map(({ path, component: Component, roles }) => (
+            <Route
+              key={path}
+              path={path}
+              element={
+                <RoleRoute allowedRoles={roles}>
+                  <Component />
+                </RoleRoute>
+              }
+            />
+          ))}
         </Route>
+
+        {/* Catch-all → login */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
     </BrowserRouter>
   );

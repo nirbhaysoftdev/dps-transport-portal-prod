@@ -1,38 +1,42 @@
 import { useEffect, useState, useCallback } from "react";
-import "../assets/css//PendingShipments.css";
+import "../assets/css/PendingShipments.css";
+import "../assets/css/shipments.css";
+import { apiFetch, getUser } from "../utils/apiClient";
+import { EditField, FuelEntryRow, DLSearchWidget } from "../components/shared/ShipmentShared";
+import { useShipmentFilters } from "../components/shared/ShipmentFilters";
 
 /* ── State columns → display label ─────────────────────────────── */
 const STATE_TAX_COLUMNS = [
-  { col: "ts_armed_forces_tax",   label: "TS Armed Forces" },
-  { col: "andhra_pradesh_tax",    label: "Andhra Pradesh" },
+  { col: "ts_armed_forces_tax", label: "TS Armed Forces" },
+  { col: "andhra_pradesh_tax", label: "Andhra Pradesh" },
   { col: "arunachal_pradesh_tax", label: "Arunachal Pradesh" },
-  { col: "assam_tax",             label: "Assam" },
-  { col: "bihar_tax",             label: "Bihar" },
-  { col: "chhattisgarh_tax",      label: "Chhattisgarh" },
-  { col: "delhi_tax",             label: "Delhi" },
-  { col: "goa_tax",               label: "Goa" },
-  { col: "gujarat_tax",           label: "Gujarat" },
-  { col: "haryana_tax",           label: "Haryana" },
-  { col: "himachal_pradesh_tax",  label: "Himachal Pradesh" },
-  { col: "jharkhand_tax",         label: "Jharkhand" },
-  { col: "karnataka_tax",         label: "Karnataka" },
-  { col: "kerala_tax",            label: "Kerala" },
-  { col: "madhya_pradesh_tax",    label: "Madhya Pradesh" },
-  { col: "maharashtra_tax",       label: "Maharashtra" },
-  { col: "manipur_tax",           label: "Manipur" },
-  { col: "meghalaya_tax",         label: "Meghalaya" },
-  { col: "mizoram_tax",           label: "Mizoram" },
-  { col: "nagaland_tax",          label: "Nagaland" },
-  { col: "odisha_tax",            label: "Odisha" },
-  { col: "punjab_tax",            label: "Punjab" },
-  { col: "rajasthan_tax",         label: "Rajasthan" },
-  { col: "sikkim_tax",            label: "Sikkim" },
-  { col: "tamil_nadu_tax",        label: "Tamil Nadu" },
-  { col: "telangana_tax",         label: "Telangana" },
-  { col: "tripura_tax",           label: "Tripura" },
-  { col: "uttar_pradesh_tax",     label: "Uttar Pradesh" },
-  { col: "uttarakhand_tax",       label: "Uttarakhand" },
-  { col: "west_bengal_tax",       label: "West Bengal" },
+  { col: "assam_tax", label: "Assam" },
+  { col: "bihar_tax", label: "Bihar" },
+  { col: "chhattisgarh_tax", label: "Chhattisgarh" },
+  { col: "delhi_tax", label: "Delhi" },
+  { col: "goa_tax", label: "Goa" },
+  { col: "gujarat_tax", label: "Gujarat" },
+  { col: "haryana_tax", label: "Haryana" },
+  { col: "himachal_pradesh_tax", label: "Himachal Pradesh" },
+  { col: "jharkhand_tax", label: "Jharkhand" },
+  { col: "karnataka_tax", label: "Karnataka" },
+  { col: "kerala_tax", label: "Kerala" },
+  { col: "madhya_pradesh_tax", label: "Madhya Pradesh" },
+  { col: "maharashtra_tax", label: "Maharashtra" },
+  { col: "manipur_tax", label: "Manipur" },
+  { col: "meghalaya_tax", label: "Meghalaya" },
+  { col: "mizoram_tax", label: "Mizoram" },
+  { col: "nagaland_tax", label: "Nagaland" },
+  { col: "odisha_tax", label: "Odisha" },
+  { col: "punjab_tax", label: "Punjab" },
+  { col: "rajasthan_tax", label: "Rajasthan" },
+  { col: "sikkim_tax", label: "Sikkim" },
+  { col: "tamil_nadu_tax", label: "Tamil Nadu" },
+  { col: "telangana_tax", label: "Telangana" },
+  { col: "tripura_tax", label: "Tripura" },
+  { col: "uttar_pradesh_tax", label: "Uttar Pradesh" },
+  { col: "uttarakhand_tax", label: "Uttarakhand" },
+  { col: "west_bengal_tax", label: "West Bengal" },
 ];
 
 /* ── Small helpers ──────────────────────────────────────────────── */
@@ -81,7 +85,7 @@ const Celebration = ({ onDone }) => {
     id: i,
     left: `${Math.random() * 100}%`,
     delay: `${Math.random() * 1.2}s`,
-    color: ["#ff6d41","#ffcd3c","#4ade80","#60a5fa","#f472b6","#a78bfa"][i % 6],
+    color: ["#ff6d41", "#ffcd3c", "#4ade80", "#60a5fa", "#f472b6", "#a78bfa"][i % 6],
     size: `${6 + Math.random() * 8}px`,
   }));
 
@@ -95,8 +99,8 @@ const Celebration = ({ onDone }) => {
       ))}
       <div className="ps-celebrate-card">
         <div className="ps-celebrate-emoji">🎉</div>
-        <h3 className="ps-celebrate-title">Shipment Approved!</h3>
-        <p className="ps-celebrate-sub">Your shipment is ready to go 🚛</p>
+        <h3 className="ps-celebrate-title">Shipment Submitted!</h3>
+        <p className="ps-celebrate-sub">Shipment is now awaiting Admin Approval ⏳.</p>
       </div>
     </div>
   );
@@ -127,38 +131,42 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
   const emptyForm = {
     dispatch_plant: "", delivery_location: "", state: "", dealer_name: "", km: "",
     material_no: "", model: "", avg: "",
-    driver_id: "", driver_name: "", dl_number: "",
     driver_payment: "", return_fare: "", additional_payment: "0",
     manual_toll_fix_toll: "", toll_amount: "",
     taxes: [], // [{ col, label, amount }]
+    driver_name: "", dl_number: "",
+    fuel_entries: [{ entry_type: "TIED_PUMP", pump_id: "", qty: "", rate: "" }]
   };
 
-  const [form, setForm]           = useState(emptyForm);
-  const [match, setMatch]         = useState({ route: null, vehicle: null, driver: null, toll: null });
-  const [drivers, setDrivers]     = useState([]);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState(null);
+  const [form, setForm] = useState(emptyForm);
+  const [match, setMatch] = useState({ route: null, vehicle: null, driver_route: null, toll: null });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [celebrate, setCelebrate] = useState(false);
+
+  const [pumps, setPumps] = useState([]);
+
+  useEffect(() => {
+    apiFetch(`/api/shipments/petrol-pumps`)
+      .then(r => r.json())
+      .then(j => { if (j.success) setPumps(j.data); })
+      .catch(console.error);
+  }, []);
 
   /* Pre-fill from raw_ on mount */
   useEffect(() => {
     setForm(f => ({
       ...f,
-      dispatch_plant:    shipment.raw_dispatch_plant        || "",
-      delivery_location: shipment.raw_delivery_location     || "",
-      state:             shipment.raw_state                 || "",
-      dealer_name:       shipment.raw_dealer_name           || "",
-      km:                shipment.raw_km                    || "",
-      material_no:       shipment.raw_vehicle_material_no   || "",
-      model:             shipment.raw_vehicle_model         || "",
-      avg:               shipment.raw_vehicle_avg           || "",
+      dispatch_plant: shipment.raw_dispatch_plant || "",
+      delivery_location: shipment.raw_delivery_location || "",
+      state: shipment.raw_state || "",
+      dealer_name: shipment.raw_dealer_name || "",
+      km: shipment.raw_km || "",
+      material_no: shipment.raw_vehicle_material_no || "",
+      model: shipment.raw_vehicle_model || "",
+      avg: shipment.raw_vehicle_avg || "",
     }));
-
-    // Fetch all drivers for dropdown
-    fetch(`${import.meta.env.VITE_API_URL}/api/drivers`)
-      .then(r => r.json())
-      .then(j => setDrivers(j.data || []))
-      .catch(() => {});
   }, [shipment]);
 
   /* Debounced master check */
@@ -167,13 +175,12 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
     const t = setTimeout(async () => {
       try {
         const params = new URLSearchParams({
-          dispatch_plant:    form.dispatch_plant,
+          dispatch_plant: form.dispatch_plant,
           delivery_location: form.delivery_location,
-          dealer_name:       form.dealer_name,
-          material_no:       form.material_no,
-          dl_number:         form.dl_number,
+          dealer_name: form.dealer_name,
+          material_no: form.material_no,
         });
-        const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/shipments/check-masters?${params}`);
+        const res = await apiFetch(`/api/shipments/check-masters?${params}`);
         const json = await res.json();
         const data = json.data || {};
         setMatch(data);
@@ -183,13 +190,21 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
           setForm(f => ({ ...f, avg: data.vehicle.avg }));
         }
 
-        // Auto-fill driver details if driver matched
-        if (data.driver) {
+        // Auto-fill route km if route matched
+        if (data.route?.km) {
           setForm(f => ({
             ...f,
-            driver_id:   data.driver.driver_id,
-            driver_name: data.driver.driver_name,
-            dl_number:   data.driver.driver_dl,
+            km: data.route.km
+          }));
+        }
+
+        // Auto-fill driver route payment if route matched
+        if (data.driver_route) {
+          setForm(f => ({
+            ...f,
+            driver_payment: data.driver_route.driver_payment ?? "",
+            return_fare: data.driver_route.return_fare ?? "",
+            additional_payment: data.driver_route.additional_payment ?? "0",
           }));
         }
 
@@ -198,7 +213,7 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
           setForm(f => ({
             ...f,
             manual_toll_fix_toll: data.toll.manual_toll_fix_toll || "",
-            toll_amount:          data.toll.toll_amount          || "",
+            toll_amount: data.toll.toll_amount || "",
           }));
         }
 
@@ -206,31 +221,16 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
         if (data.taxes && data.taxes.length > 0) {
           const prefilled = data.taxes
             .filter(t => t.amount != null)
-            .map(t => ({ col: t.col, label: t.label, amount: t.amount }));
+            .map(t => ({ col: t.col, label: t.label, amount: t.amount, isMatched: true }));
           if (prefilled.length > 0) setForm(f => ({ ...f, taxes: prefilled }));
         }
       } catch { /* silent */ }
     }, 500);
     return () => clearTimeout(t);
-  }, [form.dispatch_plant, form.delivery_location, form.dealer_name, form.material_no, form.dl_number]);
+  }, [form.dispatch_plant, form.delivery_location, form.dealer_name, form.material_no]);
 
   const set = (name, value) => setForm(f => ({ ...f, [name]: value }));
   const handleChange = e => set(e.target.name, e.target.value);
-
-  /* Driver dropdown select */
-  const handleDriverSelect = (e) => {
-    const d = drivers.find(x => x.driver_id === Number(e.target.value));
-    if (d) {
-      setForm(f => ({
-        ...f,
-        driver_id:   d.driver_id,
-        driver_name: d.driver_name,
-        dl_number:   d.driver_dl,
-      }));
-    } else {
-      setForm(f => ({ ...f, driver_id: "", driver_name: "", dl_number: "" }));
-    }
-  };
 
   /* Tax rows */
   const usedCols = form.taxes.map(t => t.col);
@@ -253,12 +253,34 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
   };
   const removeTax = (idx) => setForm(f => ({ ...f, taxes: f.taxes.filter((_, i) => i !== idx) }));
 
+  /* Fuel logic */
+  const handleFuelChange = (index, field, value) => {
+    setForm(f => {
+      const entries = [...f.fuel_entries];
+      entries[index] = { ...entries[index], [field]: value };
+      if (field === "entry_type" && value !== "TIED_PUMP") entries[index].pump_id = "";
+      return { ...f, fuel_entries: entries };
+    });
+  };
+  const handleFuelAdd = () => setForm(f => ({ ...f, fuel_entries: [...f.fuel_entries, { entry_type: "TIED_PUMP", pump_id: "", qty: "", rate: "" }] }));
+  const handleFuelRemove = index => setForm(f => ({ ...f, fuel_entries: f.fuel_entries.filter((_, i) => i !== index) }));
+
   const validate = () => {
-    if (!form.dispatch_plant)    return "Dispatch Plant is required";
+    if (!form.dispatch_plant) return "Dispatch Plant is required";
     if (!form.delivery_location) return "Delivery Location is required";
-    if (!form.dealer_name)       return "Dealer Name is required";
-    if (!form.material_no)       return "Material No is required";
-    if (!form.driver_id && !form.driver_name) return "Driver is required";
+    if (!form.dealer_name) return "Dealer Name is required";
+    if (!form.material_no) return "Material No is required";
+    if (!form.driver_name || !form.dl_number) return "Driver Details are required";
+
+    // Validate fuel entries logic
+    const distance = Number(form.km) || 0;
+    const avg = Number(form.avg) || 1;
+    const requiredFuel = Math.ceil(distance / avg);
+    const totalFilled = form.fuel_entries.reduce((sum, e) => sum + (Number(e.qty) || 0), 0);
+
+    if (form.fuel_entries.some(e => !e.qty || !e.rate)) return "All fuel entries must have qty and rate";
+    if (totalFilled < requiredFuel - 1) return `Fuel quota not met (Required ${requiredFuel}L, Filled ${totalFilled}L)`;
+
     return null;
   };
 
@@ -267,12 +289,11 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
     if (err) { setError(err); return; }
     setLoading(true); setError(null);
 
-    // Build tax object: { col: amount, ... }
     const taxPayload = {};
     form.taxes.forEach(t => { if (t.col && t.amount) taxPayload[t.col] = t.amount; });
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/shipments/approve`, {
+      const res = await apiFetch(`/api/shipments/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -282,16 +303,17 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
             state: form.state, dealer_name: form.dealer_name, km: form.km || null,
           },
           vehicle: { material_no: form.material_no, model: form.model, avg: form.avg || null },
-          driver:  { driver_id: form.driver_id || null, driver_name: form.driver_name, dl_number: form.dl_number },
-          driver_route: {
-            driver_payment: form.driver_payment || null,
-            return_fare: form.return_fare || null,
-            additional_payment: form.additional_payment || 0,
-          },
           route_toll: (form.manual_toll_fix_toll || form.toll_amount)
             ? { manual_toll_fix_toll: form.manual_toll_fix_toll || null, toll_amount: form.toll_amount || null }
             : null,
           route_tax: Object.keys(taxPayload).length > 0 ? taxPayload : null,
+          driver: { name: form.driver_name, dl_number: form.dl_number, },
+          driver_route: {
+            driver_payment: form.driver_payment,
+            return_fare: form.return_fare,
+            additional_payment: form.additional_payment,
+          },
+          fuel_entries: form.fuel_entries
         }),
       });
 
@@ -315,10 +337,9 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
     );
   }
 
-  const routeMatched   = !!match.route;
+  const routeMatched = !!match.route;
   const vehicleMatched = !!match.vehicle;
-  const driverMatched  = !!match.driver;
-  const tollMatched    = !!match.toll;
+  const tollMatched = !!match.toll;
 
   return (
     <div className="ps-approval-wrap">
@@ -336,25 +357,24 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
       {/* Raw CSV strip */}
       <div className="ps-raw-strip">
         <span className="ps-raw-label">FROM CSV</span>
-        {shipment.raw_dispatch_plant      && <span className="ps-raw-chip">{shipment.raw_dispatch_plant}</span>}
-        {shipment.raw_delivery_location   && <span className="ps-raw-chip">{shipment.raw_delivery_location}</span>}
-        {shipment.raw_dealer_name         && <span className="ps-raw-chip">{shipment.raw_dealer_name}</span>}
+        {shipment.raw_dispatch_plant && <span className="ps-raw-chip">{shipment.raw_dispatch_plant}</span>}
+        {shipment.raw_delivery_location && <span className="ps-raw-chip">{shipment.raw_delivery_location}</span>}
+        {shipment.raw_dealer_name && <span className="ps-raw-chip">{shipment.raw_dealer_name}</span>}
         {shipment.raw_vehicle_material_no && <span className="ps-raw-chip">{shipment.raw_vehicle_material_no}</span>}
-        {shipment.raw_vehicle_model       && <span className="ps-raw-chip">{shipment.raw_vehicle_model}</span>}
-        {shipment.raw_driver_name         && <span className="ps-raw-chip">{shipment.raw_driver_name}</span>}
+        {shipment.raw_vehicle_model && <span className="ps-raw-chip">{shipment.raw_vehicle_model}</span>}
       </div>
 
       <div className="ps-approval-body">
         {/* ── Route ── */}
         <Section title="Route Master" matched={routeMatched}>
           <div className="ps-grid-2">
-            <Field label="Dispatch Plant"    name="dispatch_plant"    value={form.dispatch_plant}    onChange={handleChange} required disabled={routeMatched} />
+            <Field label="Dispatch Plant" name="dispatch_plant" value={form.dispatch_plant} onChange={handleChange} required disabled={routeMatched} />
             <Field label="Delivery Location" name="delivery_location" value={form.delivery_location} onChange={handleChange} required disabled={routeMatched} />
-            <Field label="Dealer Name"       name="dealer_name"       value={form.dealer_name}       onChange={handleChange} required disabled={routeMatched} />
-            <Field label="State"             name="state"             value={form.state}             onChange={handleChange}         disabled={routeMatched} />
+            <Field label="Dealer Name" name="dealer_name" value={form.dealer_name} onChange={handleChange} required disabled={routeMatched} />
+            <Field label="State" name="state" value={form.state} onChange={handleChange} disabled={routeMatched} />
           </div>
           <div className="ps-grid-1" style={{ marginTop: 12 }}>
-            <Field label="Distance (km)" name="km" value={form.km} onChange={handleChange} type="number" disabled={routeMatched} hint="Leave blank if unknown" />
+            <Field label="Distance (km)" name="km" value={form.km} onChange={handleChange} type="number" disabled={routeMatched} />
           </div>
         </Section>
 
@@ -362,55 +382,17 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
         <Section title="Vehicle Master" matched={vehicleMatched}>
           <div className="ps-grid-3">
             <Field label="Material No" name="material_no" value={form.material_no} onChange={handleChange} required disabled={vehicleMatched} />
-            <Field label="Model"       name="model"       value={form.model}       onChange={handleChange}         disabled={vehicleMatched} />
-            <Field label="Avg (km/l)"  name="avg"         value={form.avg}         onChange={handleChange} type="number" disabled={vehicleMatched} hint={vehicleMatched ? "Auto-filled" : ""} />
+            <Field label="Model" name="model" value={form.model} onChange={handleChange} disabled={vehicleMatched} />
+            <Field label="Avg (km/l)" name="avg" value={form.avg} onChange={handleChange} type="number" disabled={vehicleMatched} hint={vehicleMatched ? "Auto-filled" : ""} />
           </div>
-        </Section>
-
-        {/* ── Driver ── */}
-        <Section title="Driver" matched={driverMatched}>
-          <div className="ps-grid-2">
-            <Field label="Select Driver" name="driver_id" required>
-              <select
-                className={`ps-input ${driverMatched ? "ps-input-locked" : ""}`}
-                value={form.driver_id}
-                onChange={driverMatched ? undefined : handleDriverSelect}
-                disabled={driverMatched}
-              >
-                <option value="">— Select driver —</option>
-                {drivers.map(d => (
-                  <option key={d.driver_id} value={d.driver_id}>
-                    {d.driver_name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="DL Number" name="dl_number" value={form.dl_number} disabled hint="Auto-filled from selection" />
-          </div>
-
-          {!driverMatched && (
-            <p className="ps-driver-hint">
-              Driver not in the list?{" "}
-              <button className="ps-link-btn" onClick={() => set("driver_id", "NEW")}>
-                Add new driver manually
-              </button>
-            </p>
-          )}
-
-          {form.driver_id === "NEW" && (
-            <div className="ps-grid-2" style={{ marginTop: 12 }}>
-              <Field label="Driver Name" name="driver_name" value={form.driver_name} onChange={handleChange} required />
-              <Field label="DL Number"   name="dl_number"   value={form.dl_number}   onChange={handleChange} required />
-            </div>
-          )}
         </Section>
 
         {/* ── Driver Route Payment ── */}
-        <Section title="Driver Route Payment">
+        <Section title="Driver Route Payment" matched={!!match.driver_route}>
           <div className="ps-grid-3">
-            <Field label="Driver Payment (₹)"     name="driver_payment"     value={form.driver_payment}     onChange={handleChange} type="number" />
-            <Field label="Return Fare (₹)"        name="return_fare"        value={form.return_fare}        onChange={handleChange} type="number" />
-            <Field label="Additional Payment (₹)" name="additional_payment" value={form.additional_payment} onChange={handleChange} type="number" />
+            <Field label="Driver Payment (₹)" name="driver_payment" value={form.driver_payment} onChange={handleChange} type="number" required disabled={!!match.driver_route} hint={match.driver_route ? "Auto-filled from route" : ""} />
+            <Field label="Return Fare (₹)" name="return_fare" value={form.return_fare} onChange={handleChange} type="number" required disabled={!!match.driver_route} hint={match.driver_route ? "Auto-filled from route" : ""} />
+            <Field label="Additional Payment (₹)" name="additional_payment" value={form.additional_payment} onChange={handleChange} type="number" disabled={!!match.driver_route} hint={match.driver_route ? "Auto-filled from route" : ""} />
           </div>
         </Section>
 
@@ -418,7 +400,7 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
         <Section title="Route Toll" matched={tollMatched}>
           <div className="ps-grid-2">
             <Field label="Manual Fix Toll (₹)" name="manual_toll_fix_toll" value={form.manual_toll_fix_toll} onChange={handleChange} type="number" disabled={tollMatched} hint={tollMatched ? "Auto-filled from route" : "Required"} />
-            <Field label="Toll Amount (₹)"     name="toll_amount"          value={form.toll_amount}          onChange={handleChange} type="number" disabled={tollMatched} hint={tollMatched ? "Auto-filled from route" : "Required"} />
+            <Field label="Toll Amount (₹)" name="toll_amount" value={form.toll_amount} onChange={handleChange} type="number" disabled={tollMatched} hint={tollMatched ? "Auto-filled from route" : "Required"} />
           </div>
         </Section>
 
@@ -435,6 +417,7 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
                   className="ps-input"
                   value={tax.col}
                   onChange={e => updateTax(idx, "col", e.target.value)}
+                  disabled={tax.isMatched}
                 >
                   {STATE_TAX_COLUMNS
                     .filter(s => s.col === tax.col || !usedCols.includes(s.col))
@@ -451,14 +434,42 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
                   value={tax.amount}
                   onChange={e => updateTax(idx, "amount", e.target.value)}
                   placeholder="0.00"
+                  disabled={tax.isMatched && tax.col !== "tamil_nadu_tax"}
                 />
               </div>
-              <button className="ps-remove-tax" onClick={() => removeTax(idx)}>✕</button>
+              {!tax.isMatched && <button className="ps-remove-tax" onClick={() => removeTax(idx)}>✕</button>}
             </div>
           ))}
           {usedCols.length < STATE_TAX_COLUMNS.length && (
             <button className="ps-add-tax-btn" onClick={addTax}>+ Add State Tax</button>
           )}
+        </Section>
+
+        {/* ── Driver Details ── */}
+        <Section title="Driver Details">
+          <DLSearchWidget
+            driverName={form.driver_name}
+            dlNumber={form.dl_number}
+            onConfirm={(name, dl) => setForm(f => ({ ...f, driver_name: name, dl_number: dl }))}
+            onClear={() => setForm(f => ({ ...f, driver_name: "", dl_number: "" }))}
+          />
+        </Section>
+
+        {/* ── Fuel Entries ── */}
+        <Section title="Fuel Entries">
+          {form.fuel_entries.map((entry, idx) => (
+            <FuelEntryRow
+              key={idx}
+              entry={entry}
+              index={idx}
+              pumps={pumps}
+              onChange={handleFuelChange}
+              onRemove={handleFuelRemove}
+              requiredQty={Math.ceil((Number(form.km) || 0) / (Number(form.avg) || 1))}
+              filledQtyExcludingThis={form.fuel_entries.reduce((sum, e, i) => i !== idx ? sum + (Number(e.qty) || 0) : sum, 0)}
+            />
+          ))}
+          <button className="ps-add-tax-btn" onClick={handleFuelAdd} style={{ marginTop: 12 }}>+ Add Fuel Entry</button>
         </Section>
       </div>
 
@@ -467,7 +478,7 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
       <div className="ps-approval-footer">
         <button className="ps-btn-cancel" onClick={onClose} disabled={loading}>Cancel</button>
         <button className="ps-btn-approve" onClick={handleApprove} disabled={loading}>
-          {loading ? <span className="ps-spinner" /> : "✓ Approve & Create Masters"}
+          {loading ? <span className="ps-spinner" /> : "✓ Save & Submit"}
         </button>
       </div>
     </div>
@@ -478,41 +489,33 @@ function ApprovalForm({ shipment, onClose, onApproved }) {
    PENDING SHIPMENTS LIST
 ═══════════════════════════════════════════════════════════════════ */
 export default function PendingShipments() {
-  const [rows, setRows]           = useState([]);
+  const canEdit = ["admin", "branch"].includes(getUser()?.role);
+  const [rows, setRows] = useState([]);
   const [approvingRow, setApprovingRow] = useState(null);
-  const [rejectingRow, setRejectingRow] = useState(null);
-  const [loadingReject, setLoadingReject] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/shipments/pending`);
+      const res = await apiFetch(`/api/shipments/pending`);
+      if (!res || !res.ok) { setRows([]); return; }
       const json = await res.json();
       setRows(json.data || []);
     } catch (err) {
       console.error(err);
+      setRows([]);
     }
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
+  // Use shared filters hook
+  const { filterBar, sorted, SortTh } = useShipmentFilters(rows, {
+    searchFields: ["shipment_no", "raw_dispatch_plant", "raw_delivery_location", "raw_dealer_name", "raw_vehicle_material_no"],
+    showLocationFilters: false,
+    defaultSort: { col: "shipment_date", dir: "desc" },
+  });
+
   const handleApproved = (shipment_id) => {
     setRows(r => r.filter(x => x.shipment_id !== shipment_id));
-  };
-
-  const confirmReject = async () => {
-    if (!rejectingRow) return;
-    setLoadingReject(true);
-    try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/shipments/reject`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ shipment_id: rejectingRow.shipment_id }),
-      });
-      setRows(r => r.filter(x => x.shipment_id !== rejectingRow.shipment_id));
-    } finally {
-      setLoadingReject(false);
-      setRejectingRow(null);
-    }
   };
 
   /* ── Show inline approval form ── */
@@ -536,7 +539,10 @@ export default function PendingShipments() {
         </div>
       </div>
 
-      {rows.length === 0 ? (
+      {/* Filter bar */}
+      {filterBar}
+
+      {sorted.length === 0 ? (
         <div className="ps-empty">
           <div className="ps-empty-icon">📭</div>
           <p>No pending shipments. You're all caught up!</p>
@@ -546,21 +552,21 @@ export default function PendingShipments() {
           <table className="ps-table">
             <thead>
               <tr>
-                <th>Shipment No</th>
-                <th>Dispatch Plant</th>
-                <th>Delivery Location</th>
-                <th>Dealer</th>
+                <SortTh col="shipment_no">Shipment No</SortTh>
+                <SortTh col="raw_dispatch_plant">Dispatch Plant</SortTh>
+                <SortTh col="raw_delivery_location">Delivery Location</SortTh>
+                <SortTh col="raw_dealer_name">Dealer</SortTh>
                 <th>Vehicle</th>
-                <th>Date</th>
+                <SortTh col="shipment_date">Date</SortTh>
                 <th>Missing</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map(s => (
+              {sorted.map(s => (
                 <tr key={s.shipment_id}>
                   <td><span className="ps-shipno">#{s.shipment_no}</span></td>
-                  <td>{s.raw_dispatch_plant    || <span className="ps-na">—</span>}</td>
+                  <td>{s.raw_dispatch_plant || <span className="ps-na">—</span>}</td>
                   <td>{s.raw_delivery_location || <span className="ps-na">—</span>}</td>
                   <td className="ps-dealer">{s.raw_dealer_name || <span className="ps-na">—</span>}</td>
                   <td>
@@ -572,20 +578,23 @@ export default function PendingShipments() {
                   <td className="ps-date">{s.shipment_date ? new Date(s.shipment_date).toLocaleDateString("en-IN") : "—"}</td>
                   <td>
                     <div className="ps-missing-chips">
-                      {!s.route_id        && <span className="ps-chip ps-chip-route">Route</span>}
-                      {!s.vehicle_id      && <span className="ps-chip ps-chip-vehicle">Vehicle</span>}
+                      {!s.route_id && <span className="ps-chip ps-chip-route">Route</span>}
+                      {!s.vehicle_id && <span className="ps-chip ps-chip-vehicle">Vehicle</span>}
                       {!s.driver_route_id && <span className="ps-chip ps-chip-driver">Driver</span>}
                       {s.route_id && s.vehicle_id && s.driver_route_id && <span className="ps-chip ps-chip-ok">All matched</span>}
                     </div>
                   </td>
                   <td>
                     <div className="ps-action-btns">
-                      <button className="ps-approve-btn" onClick={() => setApprovingRow(s)}>
-                        Review & Approve
-                      </button>
-                      <button className="ps-reject-btn" onClick={() => setRejectingRow(s)}>
-                        Reject
-                      </button>
+                      {canEdit ? (
+                        <>
+                          <button className="ps-approve-btn" onClick={() => setApprovingRow(s)}>
+                            Fill & Submit
+                          </button>
+                        </>
+                      ) : (
+                        <span className="ps-view-only">👁 View Only</span>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -593,15 +602,6 @@ export default function PendingShipments() {
             </tbody>
           </table>
         </div>
-      )}
-
-      {/* Reject confirm */}
-      {rejectingRow && (
-        <RejectConfirm
-          shipment={rejectingRow}
-          onConfirm={confirmReject}
-          onCancel={() => setRejectingRow(null)}
-        />
       )}
     </div>
   );

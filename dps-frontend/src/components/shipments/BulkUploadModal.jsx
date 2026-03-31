@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Papa from "papaparse";
 import "../../assets/css/BulkUploadModal.css";
+import { apiFetch } from "../../utils/apiClient";
 
 /* ── Required headers ───────────────────────────────────────────── */
 const REQUIRED_HEADERS = [
@@ -81,7 +82,7 @@ export default function BulkUploadModal({ onClose, onSuccess }) {
     try {
       const validRows = rows.filter(r => r._status !== "ERROR");
 
-      const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/shipments/bulk/commit`, {
+      const res  = await apiFetch(`/api/shipments/bulk/commit`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ rows: validRows }),
@@ -92,7 +93,7 @@ export default function BulkUploadModal({ onClose, onSuccess }) {
       if (json.success) {
         setSummary({
           total:   json.inserted_count || 0,
-          active:  json.active_count   || 0,
+          hold:    json.hold_count     || 0,   // matched → HOLD
           pending: json.pending_count  || 0,
           failed:  json.failed_count   || 0,
         });
@@ -116,6 +117,13 @@ export default function BulkUploadModal({ onClose, onSuccess }) {
 
         {/* Header */}
         <div className="bum-header">
+          <a
+  href="/templates/shipment_template.csv"
+  download
+  className="template-btn"
+>
+  ⬇ Download Template
+</a>
           <h3 className="bum-title">Bulk CSV Upload</h3>
           <button className="bum-close" onClick={onClose}>✕</button>
         </div>
@@ -154,8 +162,8 @@ export default function BulkUploadModal({ onClose, onSuccess }) {
                   <span className="bum-sc-label">Total Uploaded</span>
                 </div>
                 <div className="bum-summary-card bum-sc-active">
-                  <span className="bum-sc-num">{summary.active}</span>
-                  <span className="bum-sc-label">Active Shipments</span>
+                  <span className="bum-sc-num">{summary.hold}</span>
+                  <span className="bum-sc-label">On Hold (Matched)</span>
                 </div>
                 <div className="bum-summary-card bum-sc-pending">
                   <span className="bum-sc-num">{summary.pending}</span>
@@ -168,6 +176,11 @@ export default function BulkUploadModal({ onClose, onSuccess }) {
                   </div>
                 )}
               </div>
+              {summary.hold > 0 && (
+                <p className="bum-summary-note" style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1d4ed8" }}>
+                  ℹ {summary.hold} shipment{summary.hold !== 1 ? "s" : ""} matched and are On Hold — fill driver + fuel + toll + tax, then Generate Fund Request to activate.
+                </p>
+              )}
               {summary.pending > 0 && (
                 <p className="bum-summary-note">
                   ℹ {summary.pending} shipment{summary.pending !== 1 ? "s" : ""} need admin approval — route or vehicle not matched.

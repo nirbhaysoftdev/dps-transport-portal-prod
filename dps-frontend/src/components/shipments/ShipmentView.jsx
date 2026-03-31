@@ -1,50 +1,52 @@
 import { useEffect, useState, useRef } from "react";
 import "../../assets/css//ShipmentView.css";
+import { apiFetch, getUser } from "../../utils/apiClient";
+import { FuelEntryRow } from "../shared/ShipmentShared";
 
 const STATE_TAX_COLUMNS = [
-  { col: "ts_armed_forces_tax",   label: "TS Armed Forces" },
-  { col: "andhra_pradesh_tax",    label: "Andhra Pradesh" },
+  { col: "ts_armed_forces_tax", label: "TS Armed Forces" },
+  { col: "andhra_pradesh_tax", label: "Andhra Pradesh" },
   { col: "arunachal_pradesh_tax", label: "Arunachal Pradesh" },
-  { col: "assam_tax",             label: "Assam" },
-  { col: "bihar_tax",             label: "Bihar" },
-  { col: "chhattisgarh_tax",      label: "Chhattisgarh" },
-  { col: "delhi_tax",             label: "Delhi" },
-  { col: "goa_tax",               label: "Goa" },
-  { col: "gujarat_tax",           label: "Gujarat" },
-  { col: "haryana_tax",           label: "Haryana" },
-  { col: "himachal_pradesh_tax",  label: "Himachal Pradesh" },
-  { col: "jharkhand_tax",         label: "Jharkhand" },
-  { col: "karnataka_tax",         label: "Karnataka" },
-  { col: "kerala_tax",            label: "Kerala" },
-  { col: "madhya_pradesh_tax",    label: "Madhya Pradesh" },
-  { col: "maharashtra_tax",       label: "Maharashtra" },
-  { col: "manipur_tax",           label: "Manipur" },
-  { col: "meghalaya_tax",         label: "Meghalaya" },
-  { col: "mizoram_tax",           label: "Mizoram" },
-  { col: "nagaland_tax",          label: "Nagaland" },
-  { col: "odisha_tax",            label: "Odisha" },
-  { col: "punjab_tax",            label: "Punjab" },
-  { col: "rajasthan_tax",         label: "Rajasthan" },
-  { col: "sikkim_tax",            label: "Sikkim" },
-  { col: "tamil_nadu_tax",        label: "Tamil Nadu" },
-  { col: "telangana_tax",         label: "Telangana" },
-  { col: "tripura_tax",           label: "Tripura" },
-  { col: "uttar_pradesh_tax",     label: "Uttar Pradesh" },
-  { col: "uttarakhand_tax",       label: "Uttarakhand" },
-  { col: "west_bengal_tax",       label: "West Bengal" },
+  { col: "assam_tax", label: "Assam" },
+  { col: "bihar_tax", label: "Bihar" },
+  { col: "chhattisgarh_tax", label: "Chhattisgarh" },
+  { col: "delhi_tax", label: "Delhi" },
+  { col: "goa_tax", label: "Goa" },
+  { col: "gujarat_tax", label: "Gujarat" },
+  { col: "haryana_tax", label: "Haryana" },
+  { col: "himachal_pradesh_tax", label: "Himachal Pradesh" },
+  { col: "jharkhand_tax", label: "Jharkhand" },
+  { col: "karnataka_tax", label: "Karnataka" },
+  { col: "kerala_tax", label: "Kerala" },
+  { col: "madhya_pradesh_tax", label: "Madhya Pradesh" },
+  { col: "maharashtra_tax", label: "Maharashtra" },
+  { col: "manipur_tax", label: "Manipur" },
+  { col: "meghalaya_tax", label: "Meghalaya" },
+  { col: "mizoram_tax", label: "Mizoram" },
+  { col: "nagaland_tax", label: "Nagaland" },
+  { col: "odisha_tax", label: "Odisha" },
+  { col: "punjab_tax", label: "Punjab" },
+  { col: "rajasthan_tax", label: "Rajasthan" },
+  { col: "sikkim_tax", label: "Sikkim" },
+  { col: "tamil_nadu_tax", label: "Tamil Nadu" },
+  { col: "telangana_tax", label: "Telangana" },
+  { col: "tripura_tax", label: "Tripura" },
+  { col: "uttar_pradesh_tax", label: "Uttar Pradesh" },
+  { col: "uttarakhand_tax", label: "Uttarakhand" },
+  { col: "west_bengal_tax", label: "West Bengal" },
 ];
 
 const STATUSES = ["Dispatched", "Running", "Delivered", "Accident"];
 
 /* Fields required before Delivered status is allowed */
 const DELIVERED_REQUIRED = [
-  { key: "chassis_no",    label: "Chassis No" },
-  { key: "engine_no",     label: "Engine No" },
+  { key: "chassis_no", label: "Chassis No" },
+  { key: "engine_no", label: "Engine No" },
   { key: "delivery_date", label: "Delivery Date" },
 ];
 
 const MAX_POD_SIZE = 300 * 1024; // 300 KB
-const POD_ALLOWED  = ["image/jpeg", "image/jpg", "image/png"];
+const POD_ALLOWED = ["image/jpeg", "image/jpg", "image/png"];
 
 /* ── Small helpers ──────────────────────────────────────────────── */
 const InfoRow = ({ label, value }) => (
@@ -54,8 +56,8 @@ const InfoRow = ({ label, value }) => (
   </div>
 );
 
-const EditField = ({ label, name, value, onChange, type = "text", children }) => (
-  <div className="sv-edit-field">
+const EditField = ({ label, name, value, onChange, type = "text", disabled, children }) => (
+  <div className={`sv-edit-field ${disabled ? "sv-disabled-field" : ""}`}>
     <label className="sv-edit-label">{label}</label>
     {children || (
       <input
@@ -63,31 +65,10 @@ const EditField = ({ label, name, value, onChange, type = "text", children }) =>
         type={type}
         name={name}
         value={value ?? ""}
-        onChange={onChange}
+        onChange={disabled ? undefined : onChange}
+        disabled={disabled}
       />
     )}
-  </div>
-);
-
-const PumpRow = ({ pump, label, form, onChange }) => (
-  <div className="sv-pump-row">
-    <span className="sv-pump-label">{label}</span>
-    <div className="sv-pump-inputs">
-      <div className="sv-edit-field">
-        <label className="sv-edit-label">Qty (L)</label>
-        <input className="sv-edit-input" type="number" name={`${pump}_qty`}
-          value={form[`${pump}_qty`] ?? ""} onChange={onChange} placeholder="0" />
-      </div>
-      <div className="sv-edit-field">
-        <label className="sv-edit-label">Rate (₹/L)</label>
-        <input className="sv-edit-input" type="number" name={`${pump}_rate`}
-          value={form[`${pump}_rate`] ?? ""} onChange={onChange} placeholder="0.00" />
-      </div>
-      <div className="sv-pump-total">
-        ₹{((Number(form[`${pump}_qty`] || 0)) * (Number(form[`${pump}_rate`] || 0)))
-          .toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-      </div>
-    </div>
   </div>
 );
 
@@ -95,25 +76,51 @@ const PumpRow = ({ pump, label, form, onChange }) => (
    MAIN COMPONENT
 ═══════════════════════════════════════════════════════════════════ */
 export default function ShipmentView({ shipmentId, onBack }) {
-  const [data, setData]         = useState(null);
+  const [data, setData] = useState(null);
   const [editMode, setEditMode] = useState(false);
-  const [form, setForm]         = useState({});
-  const [saving, setSaving]     = useState(false);
-  const [saved, setSaved]       = useState(false);
-  const [error, setError]       = useState(null);
+  const [form, setForm] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState(null);
   const [deliveredErrors, setDeliveredErrors] = useState([]);
 
   // POD state
-  const [podFile, setPodFile]       = useState(null);   // File object
+  const [podFile, setPodFile] = useState(null);   // File object
   const [podPreview, setPodPreview] = useState(null);   // data URL for preview
-  const [podError, setPodError]     = useState(null);
+  const [podError, setPodError] = useState(null);
   const podInputRef = useRef();
 
+  // Fund request state
+  const [fundRequesting, setFundRequesting] = useState(false);
+  const [fundSuccess, setFundSuccess] = useState(false);
+  const [fundError, setFundError] = useState(null);
+
+  // Petrol pumps for fuel dropdown
+  const [pumps, setPumps] = useState([]);
+
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/shipments/${shipmentId}`)
-      .then(r => r.json())
-      .then(j => { setData(j.data); initForm(j.data); })
-      .catch(console.error);
+    apiFetch(`/api/shipments/petrol-pumps`)
+      .then(r => { if (r && r.ok) return r.json(); return { success: false }; })
+      .then(j => { if (j.success) setPumps(j.data || []); })
+      .catch(() => { });
+  }, []);
+
+  useEffect(() => {
+    apiFetch(`/api/shipments/${shipmentId}`)
+      .then(r => {
+        if (!r) throw new Error("Session expired — please log in again");
+        if (!r.ok) throw new Error(`Server error (${r.status})`);
+        return r.json();
+      })
+      .then(j => {
+        if (j.success && j.data) {
+          setData(j.data);
+          initForm(j.data);
+        } else {
+          setError(j.message || "Failed to load shipment");
+        }
+      })
+      .catch(e => setError(e.message || "Failed to load"));
   }, [shipmentId]);
 
   const initForm = (d) => {
@@ -122,21 +129,27 @@ export default function ShipmentView({ shipmentId, onBack }) {
       .filter(({ col }) => d[col] != null && Number(d[col]) > 0)
       .map(({ col, label }) => ({ col, label, amount: d[col] }));
 
+    // Initialize fuel entries from normalized data
+    const fuelEntries = (d.fuel_entries || []).map(e => ({
+      entry_type: e.entry_type || "TIED_PUMP",
+      pump_id: e.pump_id || "",
+      qty: e.qty ?? "",
+      rate: e.rate ?? "",
+    }));
+    if (fuelEntries.length === 0) {
+      fuelEntries.push({ entry_type: "TIED_PUMP", pump_id: "", qty: "", rate: "" });
+    }
+
     setForm({
-      current_status:          d.current_status || "",
-      delivery_date:           d.delivery_date?.slice(0, 10) || "",
+      current_status: d.current_status || "",
+      delivery_date: d.delivery_date?.slice(0, 10) || "",
       estimated_delivery_date: d.estimated_delivery_date?.slice(0, 10) || "",
-      reason_for_delay:        d.reason_for_delay || "",
-      communicate_to_alcop:    d.communicate_to_alcop || "",
-      pump1_qty:  d.pump1_qty  ?? "", pump1_rate:     d.pump1_rate     ?? "",
-      pump2_qty:  d.pump2_qty  ?? "", pump2_rate:     d.pump2_rate     ?? "",
-      pump3_qty:  d.pump3_qty  ?? "", pump3_rate:     d.pump3_rate     ?? "",
-      pump4_qty:  d.pump4_qty  ?? "", pump4_rate:     d.pump4_rate     ?? "",
-      fuel_card_qty:  d.fuel_card_qty  ?? "", fuel_card_rate:  d.fuel_card_rate  ?? "",
-      hsd_qty:        d.hsd_qty        ?? "", hsd_rate:        d.hsd_rate        ?? "",
+      reason_for_delay: d.reason_for_delay || "",
+      communicate_to_alcop: d.communicate_to_alcop || "",
       toll_manual: d.manual_toll_fix_toll ?? "",
-      toll_amount: d.toll_amount         ?? "",
+      toll_amount: d.toll_amount ?? "",
       taxes,
+      fuel_entries: fuelEntries,
     });
     // Reset POD state when reinitialising
     setPodFile(null);
@@ -146,10 +159,25 @@ export default function ShipmentView({ shipmentId, onBack }) {
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
+  /* ── Fuel entry handlers ───────────────────────────────────────── */
+  const handleFuelChange = (index, field, value) => {
+    setForm(f => {
+      const entries = [...f.fuel_entries];
+      entries[index] = { ...entries[index], [field]: value };
+      if (field === "entry_type" && value !== "TIED_PUMP") entries[index].pump_id = "";
+      return { ...f, fuel_entries: entries };
+    });
+  };
+  const handleFuelAdd = () => setForm(f => ({
+    ...f, fuel_entries: [...f.fuel_entries, { entry_type: "TIED_PUMP", pump_id: "", qty: "", rate: "" }]
+  }));
+  const handleFuelRemove = index => setForm(f => ({
+    ...f, fuel_entries: f.fuel_entries.filter((_, i) => i !== index)
+  }));
+
   const totalFuel = () => {
-    const pumps = ["pump1","pump2","pump3","pump4","fuel_card","hsd"];
-    return pumps.reduce((sum, p) =>
-      sum + (Number(form[`${p}_qty`] || 0) * Number(form[`${p}_rate`] || 0)), 0);
+    return (form.fuel_entries || []).reduce((sum, e) =>
+      sum + (Number(e.qty || 0) * Number(e.rate || 0)), 0);
   };
 
   /* ── POD file handler ──────────────────────────────────────────── */
@@ -224,7 +252,7 @@ export default function ShipmentView({ shipmentId, onBack }) {
         const fd = new FormData();
         fd.append("pod", podFile);
         fd.append("shipment_id", shipmentId);
-        const podRes  = await fetch(`${import.meta.env.VITE_API_URL}/api/shipments/${shipmentId}/pod`, {
+        const podRes = await apiFetch(`/api/shipments/${shipmentId}/pod`, {
           method: "POST",
           body: fd,
         });
@@ -233,24 +261,19 @@ export default function ShipmentView({ shipmentId, onBack }) {
         podPath = podJson.pod_path;
       }
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/shipments/${shipmentId}`, {
+      const res = await apiFetch(`/api/shipments/${shipmentId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          current_status:          form.current_status,
-          delivery_date:           form.delivery_date           || null,
+          current_status: form.current_status,
+          delivery_date: form.delivery_date || null,
           estimated_delivery_date: form.estimated_delivery_date || null,
-          reason_for_delay:        form.reason_for_delay        || null,
-          communicate_to_alcop:    form.communicate_to_alcop    || null,
-          pump1_rate:  form.pump1_rate,  pump1_qty:  form.pump1_qty,
-          pump2_rate:  form.pump2_rate,  pump2_qty:  form.pump2_qty,
-          pump3_rate:  form.pump3_rate,  pump3_qty:  form.pump3_qty,
-          pump4_rate:  form.pump4_rate,  pump4_qty:  form.pump4_qty,
-          fuel_card_qty:  form.fuel_card_qty,  fuel_card_rate:  form.fuel_card_rate,
-          hsd_qty:        form.hsd_qty,        hsd_rate:        form.hsd_rate,
+          reason_for_delay: form.reason_for_delay || null,
+          communicate_to_alcop: form.communicate_to_alcop || null,
           route_id: data.route_id,
           toll: { manual_toll_fix_toll: form.toll_manual, toll_amount: form.toll_amount },
           tax: taxPayload,
+          fuel_entries: form.fuel_entries,
         }),
       });
 
@@ -261,7 +284,7 @@ export default function ShipmentView({ shipmentId, onBack }) {
       setTimeout(() => setSaved(false), 3000);
       setEditMode(false);
 
-      const fresh = await fetch(`${import.meta.env.VITE_API_URL}/api/shipments/${shipmentId}`).then(r => r.json());
+      const fresh = await apiFetch(`/api/shipments/${shipmentId}`).then(r => r.json());
       setData(fresh.data);
       initForm(fresh.data);
     } catch (e) {
@@ -271,11 +294,91 @@ export default function ShipmentView({ shipmentId, onBack }) {
     }
   };
 
+  if (error && !data) {
+    return (
+      <div className="sv-wrapper">
+        <div className="sv-topbar"><button className="sv-back-btn" onClick={onBack}>← Back</button></div>
+        <div className="sv-error" style={{ margin: 20 }}>⚠ {error}</div>
+      </div>
+    );
+  }
+
   if (!data) {
     return <div className="sv-wrapper"><div className="sv-loading">Loading shipment details…</div></div>;
   }
 
   const statusClass = data.current_status?.toLowerCase().replace(/\s+/g, "-") || "";
+
+  // ── Role-based edit permissions ──────────────────────────────────
+  const user = getUser();
+  const userRole = user?.role || "branch";
+  const isAdmin = userRole === "admin";
+  const isHold = data.approval_status === "HOLD";
+  const isApproval = data.approval_status === "APPROVAL";
+  const isActive = data.approval_status === "ACTIVE";
+
+  // Branch can edit HOLD shipments that have matched route & vehicle
+  const branchCanEditHold = isHold && data.route_id && data.vehicle_id;
+
+  // Admin: can always edit — no restrictions
+  // Branch: can only edit HOLD shipments with matched route & vehicle
+  const canEdit = isAdmin || (userRole === "branch" && branchCanEditHold);
+
+  // Fuel quota calculation for entry validation
+  const requiredFuel = Math.ceil((Number(data.km) || 0) / (Number(data.avg) || 1));
+
+  /* ── Cost Summary Calculations ───────────────────────────────────── */
+  const calcTaxTotal = () => {
+    return STATE_TAX_COLUMNS.reduce(
+      (sum, { col }) => sum + (Number(data[col]) || 0), 0
+    );
+  };
+  const calcDriverTotal = () => {
+    return (Number(data.driver_payment) || 0) + (Number(data.return_fare) || 0);
+  };
+  const calcTollTotal = () => {
+    return (Number(data.manual_toll_fix_toll) || 0) + (Number(data.toll_amount) || 0);
+  };
+  const calcFuelTotal = () => {
+    return Number(data.fuel_total) || 0;
+  };
+  const calcGrandTotal = () => {
+    return calcTaxTotal() + calcDriverTotal() + calcTollTotal() + calcFuelTotal();
+  };
+
+  /* ── Fund Request Readiness Check ────────────────────────────────── */
+  const isFundReady = isHold
+    && calcFuelTotal() > 0
+    && calcTollTotal() > 0
+    && calcTaxTotal() > 0;
+
+  /* ── Fund Request Handler ──────────────────────────────────────── */
+  const handleFundRequest = async () => {
+    setFundRequesting(true);
+    setFundError(null);
+    try {
+      const res = await apiFetch(`/api/shipments/${shipmentId}/fund-request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.message || "Fund request failed");
+      }
+      setFundSuccess(true);
+      // Refresh shipment data to reflect new ACTIVE status
+      const fresh = await apiFetch(`/api/shipments/${shipmentId}`).then(r => r.json());
+      if (fresh.success && fresh.data) {
+        setData(fresh.data);
+        initForm(fresh.data);
+      }
+    } catch (e) {
+      setFundError(e.message);
+    } finally {
+      setFundRequesting(false);
+    }
+  };
 
   return (
     <div className="sv-wrapper">
@@ -285,7 +388,22 @@ export default function ShipmentView({ shipmentId, onBack }) {
         <div className="sv-topbar-right">
           {saved && <span className="sv-saved-toast">✓ Saved successfully</span>}
           {!editMode ? (
-            <button className="sv-edit-btn" onClick={() => { setEditMode(true); setDeliveredErrors([]); }}>✏ Edit</button>
+            <>
+              {canEdit
+                ? <button className="sv-edit-btn" onClick={() => { setEditMode(true); setDeliveredErrors([]); }}>✏ Edit</button>
+                : (isApproval ? <span className="sv-view-only-badge">⏳ Awaiting Approval</span> : isActive ? <span className="sv-view-only-badge">✅ Approved</span> : isHold ? <span className="sv-view-only-badge">🔒 Read Only (Hold)</span> : <span className="sv-view-only-badge">👁 View Only</span>)
+              }
+              {/* Generate Fund Request — only visible for HOLD shipments when all cost data is filled */}
+              {isHold && isFundReady && !fundSuccess && (
+                <button
+                  className="sv-fund-btn"
+                  onClick={handleFundRequest}
+                  disabled={fundRequesting}
+                >
+                  {fundRequesting ? <span className="sv-spinner-sm" /> : "💰 Generate Fund Request"}
+                </button>
+              )}
+            </>
           ) : (
             <>
               <button className="sv-cancel-btn" onClick={() => { setEditMode(false); initForm(data); setDeliveredErrors([]); }}>Cancel</button>
@@ -302,6 +420,8 @@ export default function ShipmentView({ shipmentId, onBack }) {
         <div className="sv-hero-left">
           <div className="sv-hero-no">#{data.shipment_no}</div>
           <span className={`sv-status-badge sv-status-${statusClass}`}>{data.current_status}</span>
+          {isHold && <span className="sv-hold-badge">HOLD</span>}
+          {data.approval_status === "APPROVAL" && <span className="sv-hold-badge" style={{ background: "#f59e0b", borderColor: "#f59e0b" }}>APPROVAL</span>}
         </div>
         <div className="sv-hero-route">
           <span className="sv-route-plant">{data.dispatch_plant || "—"}</span>
@@ -310,6 +430,46 @@ export default function ShipmentView({ shipmentId, onBack }) {
           {data.km && <span className="sv-route-km">{data.km} km</span>}
         </div>
       </div>
+
+      {/* ── Cost Summary Banner ──────────────────────────────────────── */}
+      {(isHold || isActive) && (
+        <div className="sv-expense-banner">
+          <div className="sv-expense-item">
+            <span className="sv-expense-label">Tax</span>
+            <span className="sv-expense-val">₹{calcTaxTotal().toLocaleString("en-IN")}</span>
+          </div>
+          <div className="sv-expense-divider" />
+          <div className="sv-expense-item">
+            <span className="sv-expense-label">Driver</span>
+            <span className="sv-expense-val">₹{calcDriverTotal().toLocaleString("en-IN")}</span>
+          </div>
+          <div className="sv-expense-divider" />
+          <div className="sv-expense-item">
+            <span className="sv-expense-label">Toll</span>
+            <span className="sv-expense-val">₹{calcTollTotal().toLocaleString("en-IN")}</span>
+          </div>
+          <div className="sv-expense-divider" />
+          <div className="sv-expense-item">
+            <span className="sv-expense-label">Fuel</span>
+            <span className="sv-expense-val">₹{calcFuelTotal().toLocaleString("en-IN")}</span>
+          </div>
+          <div className="sv-expense-divider sv-expense-divider-thick" />
+          <div className="sv-expense-item sv-expense-total">
+            <span className="sv-expense-label">Total</span>
+            <span className="sv-expense-val sv-expense-grand">₹{calcGrandTotal().toLocaleString("en-IN")}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Fund request success */}
+      {fundSuccess && (
+        <div className="sv-fund-success">
+          ✅ Fund request generated successfully — shipment is now <strong>Active</strong> and visible in Finance.
+        </div>
+      )}
+
+      {/* Fund request error */}
+      {fundError && <div className="sv-error">⚠ Fund Request: {fundError}</div>}
 
       {/* Delivered validation errors */}
       {deliveredErrors.length > 0 && (
@@ -328,13 +488,13 @@ export default function ShipmentView({ shipmentId, onBack }) {
         {/* Shipment Info */}
         <div className="sv-card">
           <div className="sv-card-title">Shipment Details</div>
-          <InfoRow label="Shipment Date"   value={data.shipment_date    ? new Date(data.shipment_date).toLocaleDateString("en-IN")    : null} />
-          <InfoRow label="Billing Doc No"  value={data.billing_doc_number} />
-          <InfoRow label="Billing Date"    value={data.billing_date     ? new Date(data.billing_date).toLocaleDateString("en-IN")     : null} />
-          <InfoRow label="Chassis No"      value={data.chassis_no} />
-          <InfoRow label="Engine No"       value={data.engine_no} />
-          <InfoRow label="Allocation Date" value={data.allocation_date  ? new Date(data.allocation_date).toLocaleDateString("en-IN")  : null} />
-          <InfoRow label="Dispatch Date"   value={data.dispatch_date    ? new Date(data.dispatch_date).toLocaleDateString("en-IN")    : null} />
+          <InfoRow label="Shipment Date" value={data.shipment_date ? new Date(data.shipment_date).toLocaleDateString("en-IN") : null} />
+          <InfoRow label="Billing Doc No" value={data.billing_doc_number} />
+          <InfoRow label="Billing Date" value={data.billing_date ? new Date(data.billing_date).toLocaleDateString("en-IN") : null} />
+          <InfoRow label="Chassis No" value={data.chassis_no} />
+          <InfoRow label="Engine No" value={data.engine_no} />
+          <InfoRow label="Allocation Date" value={data.allocation_date ? new Date(data.allocation_date).toLocaleDateString("en-IN") : null} />
+          <InfoRow label="Dispatch Date" value={data.dispatch_date ? new Date(data.dispatch_date).toLocaleDateString("en-IN") : null} />
         </div>
 
         {/* Status & Dates */}
@@ -358,17 +518,17 @@ export default function ShipmentView({ shipmentId, onBack }) {
                 </div>
               )}
 
-              <EditField label="Delivery Date"           name="delivery_date"           value={form.delivery_date}           onChange={handleChange} type="date" />
+              <EditField label="Delivery Date" name="delivery_date" value={form.delivery_date} onChange={handleChange} type="date" />
               <EditField label="Estimated Delivery Date" name="estimated_delivery_date" value={form.estimated_delivery_date} onChange={handleChange} type="date" />
-              <EditField label="Reason for Delay"        name="reason_for_delay"        value={form.reason_for_delay}        onChange={handleChange} />
-              <EditField label="Communicate to ALCOP"    name="communicate_to_alcop"    value={form.communicate_to_alcop}    onChange={handleChange} />
+              <EditField label="Reason for Delay" name="reason_for_delay" value={form.reason_for_delay} onChange={handleChange} />
+              <EditField label="Communicate to ALCOP" name="communicate_to_alcop" value={form.communicate_to_alcop} onChange={handleChange} />
             </>
           ) : (
             <>
-              <InfoRow label="Status"               value={data.current_status} />
-              <InfoRow label="Delivery Date"        value={data.delivery_date           ? new Date(data.delivery_date).toLocaleDateString("en-IN")           : null} />
-              <InfoRow label="Estimated Delivery"   value={data.estimated_delivery_date ? new Date(data.estimated_delivery_date).toLocaleDateString("en-IN") : null} />
-              <InfoRow label="Reason for Delay"     value={data.reason_for_delay} />
+              <InfoRow label="Status" value={data.current_status} />
+              <InfoRow label="Delivery Date" value={data.delivery_date ? new Date(data.delivery_date).toLocaleDateString("en-IN") : null} />
+              <InfoRow label="Estimated Delivery" value={data.estimated_delivery_date ? new Date(data.estimated_delivery_date).toLocaleDateString("en-IN") : null} />
+              <InfoRow label="Reason for Delay" value={data.reason_for_delay} />
               <InfoRow label="Communicate to ALCOP" value={data.communicate_to_alcop} />
             </>
           )}
@@ -377,8 +537,8 @@ export default function ShipmentView({ shipmentId, onBack }) {
         {/* Route */}
         <div className="sv-card">
           <div className="sv-card-title">Route & Dealer</div>
-          <InfoRow label="Dealer"   value={data.dealer_name} />
-          <InfoRow label="State"    value={data.state} />
+          <InfoRow label="Dealer" value={data.dealer_name} />
+          <InfoRow label="State" value={data.state} />
           <InfoRow label="Distance" value={data.km ? `${data.km} km` : null} />
         </div>
 
@@ -386,17 +546,17 @@ export default function ShipmentView({ shipmentId, onBack }) {
         <div className="sv-card">
           <div className="sv-card-title">Vehicle</div>
           <InfoRow label="Material No" value={data.material_no} />
-          <InfoRow label="Model"       value={data.model} />
-          <InfoRow label="Avg (km/L)"  value={data.avg} />
+          <InfoRow label="Model" value={data.model} />
+          <InfoRow label="Avg (km/L)" value={data.avg} />
         </div>
 
         {/* Driver */}
         <div className="sv-card">
           <div className="sv-card-title">Driver</div>
-          <InfoRow label="Name"        value={data.driver_name} />
-          <InfoRow label="DL Number"   value={data.driver_dl} />
-          <InfoRow label="Payment"     value={data.driver_payment ? `₹${Number(data.driver_payment).toLocaleString("en-IN")}` : null} />
-          <InfoRow label="Return Fare" value={data.return_fare    ? `₹${Number(data.return_fare).toLocaleString("en-IN")}`    : null} />
+          <InfoRow label="Name" value={data.driver_name} />
+          <InfoRow label="DL Number" value={data.driver_dl} />
+          <InfoRow label="Payment" value={data.driver_payment ? `₹${Number(data.driver_payment).toLocaleString("en-IN")}` : null} />
+          <InfoRow label="Return Fare" value={data.return_fare ? `₹${Number(data.return_fare).toLocaleString("en-IN")}` : null} />
         </div>
 
         {/* Toll */}
@@ -407,13 +567,13 @@ export default function ShipmentView({ shipmentId, onBack }) {
           </div>
           {editMode ? (
             <>
-              <EditField label="Manual Fix Toll (₹)" name="toll_manual" value={form.toll_manual} onChange={handleChange} type="number" />
-              <EditField label="Toll Amount (₹)"     name="toll_amount" value={form.toll_amount} onChange={handleChange} type="number" />
+              <EditField label="Manual Fix Toll (₹)" name="toll_manual" value={form.toll_manual} onChange={handleChange} type="number" disabled={data.manual_toll_fix_toll != null && data.manual_toll_fix_toll !== ""} />
+              <EditField label="Toll Amount (₹)" name="toll_amount" value={form.toll_amount} onChange={handleChange} type="number" disabled={data.toll_amount != null && data.toll_amount !== ""} />
             </>
           ) : (
             <>
               <InfoRow label="Manual Fix Toll" value={data.manual_toll_fix_toll ? `₹${Number(data.manual_toll_fix_toll).toLocaleString("en-IN")}` : null} />
-              <InfoRow label="Toll Amount"     value={data.toll_amount           ? `₹${Number(data.toll_amount).toLocaleString("en-IN")}`           : null} />
+              <InfoRow label="Toll Amount" value={data.toll_amount ? `₹${Number(data.toll_amount).toLocaleString("en-IN")}` : null} />
             </>
           )}
         </div>
@@ -486,39 +646,49 @@ export default function ShipmentView({ shipmentId, onBack }) {
           </div>
           {editMode ? (
             <>
-              {[
-                { pump: "pump1",     label: "Pump 1" },
-                { pump: "pump2",     label: "Pump 2" },
-                { pump: "pump3",     label: "Pump 3" },
-                { pump: "pump4",     label: "Pump 4" },
-                { pump: "fuel_card", label: "Fuel Card" },
-                { pump: "hsd",       label: "HSD" },
-              ].map(({ pump, label }) => (
-                <PumpRow key={pump} pump={pump} label={label} form={form} onChange={handleChange} />
+              {(form.fuel_entries || []).map((entry, idx) => (
+                <FuelEntryRow
+                  key={idx}
+                  entry={entry}
+                  index={idx}
+                  pumps={pumps}
+                  onChange={handleFuelChange}
+                  onRemove={handleFuelRemove}
+                  requiredQty={requiredFuel}
+                  filledQtyExcludingThis={(form.fuel_entries || []).reduce((sum, e, i) => i !== idx ? sum + (Number(e.qty) || 0) : sum, 0)}
+                />
               ))}
+              <button className="sv-add-tax-btn" onClick={handleFuelAdd} style={{ marginTop: 12 }}>+ Add Fuel Entry</button>
               <div className="sv-fuel-total">
                 Total Fuel Cost: <strong>₹{totalFuel().toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong>
               </div>
             </>
           ) : (
             <div className="sv-fuel-grid">
-              {[
-                { key: "pump1",     label: "Pump 1" },
-                { key: "pump2",     label: "Pump 2" },
-                { key: "pump3",     label: "Pump 3" },
-                { key: "pump4",     label: "Pump 4" },
-                { key: "fuel_card", label: "Fuel Card" },
-                { key: "hsd",       label: "HSD" },
-              ].map(({ key, label }) => (
-                <div key={key} className="sv-fuel-cell">
-                  <span className="sv-fuel-cell-label">{label}</span>
-                  <span className="sv-fuel-cell-val">
-                    {Number(data[`${key}_qty`]) > 0
-                      ? `${data[`${key}_qty`]} L @ ₹${data[`${key}_rate`]}`
-                      : <span className="sv-na">—</span>}
-                  </span>
+              {(data.fuel_entries || []).length > 0 ? (
+                (data.fuel_entries || []).map((entry, idx) => {
+                  const label = entry.entry_type === "TIED_PUMP"
+                    ? (entry.pump_name ? `${entry.pump_name} (${entry.location || ""})` : "Tied Pump")
+                    : entry.entry_type === "FUEL_CARD" ? "Fuel Card" : "HSD";
+                  return (
+                    <div key={idx} className="sv-fuel-cell">
+                      <span className="sv-fuel-cell-label">{label}</span>
+                      <span className="sv-fuel-cell-val">
+                        {Number(entry.qty) > 0
+                          ? `${entry.qty} L @ ₹${entry.rate} = ₹${Number(entry.amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`
+                          : <span className="sv-na">—</span>}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="sv-na" style={{ padding: "8px 0" }}>No fuel entries recorded</p>
+              )}
+              {(data.fuel_entries || []).length > 0 && (
+                <div className="sv-fuel-total" style={{ marginTop: 8 }}>
+                  Total: <strong>₹{Number(data.fuel_total || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>
@@ -560,6 +730,7 @@ export default function ShipmentView({ shipmentId, onBack }) {
                     <div className="sv-edit-field" style={{ flex: 2 }}>
                       <label className="sv-edit-label">State</label>
                       <select className="sv-edit-input" value={tax.col}
+                        disabled={data[tax.col] != null && data[tax.col] !== ""}
                         onChange={e => updateTax(idx, "col", e.target.value)}>
                         {STATE_TAX_COLUMNS
                           .filter(s => s.col === tax.col || !usedCols.includes(s.col))
@@ -569,9 +740,10 @@ export default function ShipmentView({ shipmentId, onBack }) {
                     <div className="sv-edit-field" style={{ flex: 2 }}>
                       <label className="sv-edit-label">Tax Amount (₹)</label>
                       <input className="sv-edit-input" type="number" value={tax.amount}
+                        disabled={data[tax.col] != null && data[tax.col] !== "" && tax.col !== "tamil_nadu_tax"}
                         onChange={e => updateTax(idx, "amount", e.target.value)} placeholder="0.00" />
                     </div>
-                    <button className="sv-remove-tax" onClick={() => removeTax(idx)}>✕</button>
+                    {(data[tax.col] == null || data[tax.col] === "") && <button className="sv-remove-tax" onClick={() => removeTax(idx)}>✕</button>}
                   </div>
                 ))}
                 {usedCols.length < STATE_TAX_COLUMNS.length && (

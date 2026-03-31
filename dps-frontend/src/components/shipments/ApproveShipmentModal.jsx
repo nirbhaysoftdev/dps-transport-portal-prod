@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import "../../assets/css/ApproveShipmentModal.css";
+import "./ApproveShipmentModal.css";
+import { apiFetch } from "../../utils/apiClient";
 
 const Section = ({ title, children }) => (
   <div className="asm-section">
@@ -87,7 +88,7 @@ export default function ApproveShipmentModal({ shipment, onClose, onApproved }) 
           material_no:       form.material_no,
           dl_number:         form.dl_number,
         });
-        const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/shipments/check-masters?${params}`);
+        const res  = await apiFetch(`/api/shipments/check-masters?${params}`);
         const json = await res.json();
         setMatchInfo(json.data || { route: null, vehicle: null, driver: null });
       } catch {
@@ -126,7 +127,7 @@ export default function ApproveShipmentModal({ shipment, onClose, onApproved }) 
     setError(null);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/shipments/approve`, {
+      const res = await apiFetch(`/api/shipments/approve`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -94,7 +94,9 @@ export const bulkPreview = async (req, res) => {
 
 /* ================================================================
    BULK COMMIT
-   Returns inserted_count, active_count, pending_count, failed_count
+   Matched (route+vehicle) → HOLD  (shows in Shipments, needs fund request)
+   Unmatched               → PENDING (goes to PendingShipments)
+   Returns inserted_count, hold_count, pending_count, failed_count
    ================================================================ */
 export const bulkCommit = async (req, res) => {
   console.log("BULK Commit Hit — rows:", req.body?.rows?.length);
@@ -108,17 +110,31 @@ export const bulkCommit = async (req, res) => {
 
     const inserted = [];
     const failed   = [];
-    let activeCount  = 0;
+    let holdCount    = 0;
     let pendingCount = 0;
 
     const normalizeDate = (value) => {
       if (!value) return null;
-      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
-      if (/^\d{2}-\d{2}-\d{4}$/.test(value)) {
-        const [dd, mm, yyyy] = value.split("-");
+      const str = String(value).trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+      if (/^\d{2}[/-]\d{2}[/-]\d{4}$/.test(str)) {
+        const [dd, mm, yyyy] = str.split(/[/-]/);
         return `${yyyy}-${mm}-${dd}`;
       }
+      if (/^\d{4}[/-]\d{2}[/-]\d{2}$/.test(str)) {
+        const [yyyy, mm, dd] = str.split(/[/-]/);
+        return `${yyyy}-${mm}-${dd}`;
+      }
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) return d.toISOString().split("T")[0];
       return null;
+    };
+
+    const addDays = (dateStr, days) => {
+      if (!dateStr || !days) return null;
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split("T")[0];
     };
 
     for (const row of rows) {
@@ -131,21 +147,48 @@ export const bulkCommit = async (req, res) => {
           material_no:       row.material_no,
         });
 
-        const approvalStatus = master.requiresApproval ? "PENDING" : "ACTIVE";
+        // Matched → HOLD (shows in Shipments, needs fund request to activate)
+        // Unmatched → PENDING (goes to PendingShipments for admin approval)
+        const approvalStatus = master.requiresApproval ? "PENDING" : "HOLD";
         const currentStatus  = approvalStatus === "PENDING" ? "Pending Approval" : (row.current_status || "Dispatched");
 
+        const dispatchDate = normalizeDate(row.dispatch_date);
+
+        let estimatedDeliveryDate = null;
+        if (dispatchDate && master.route_id) {
+          const [routeRows] = await db.query(
+            "SELECT km FROM route_master WHERE route_id = ?",
+            [master.route_id]
+          );
+          if (routeRows.length && routeRows[0].km) {
+            const travelDays = Math.ceil(Number(routeRows[0].km) / 300);
+            estimatedDeliveryDate = addDays(dispatchDate, travelDays);
+          }
+        }
+
+        // ── Plant code: from CSV row, validated against branch scope ──
+        const rowPlantCode = String(row.plant_code || "").trim();
+        const scopePlant   = req.scope?.plantCode || null;
+
+        // Branch user can only upload their own plant_code
+        if (scopePlant && rowPlantCode && rowPlantCode !== scopePlant) {
+          failed.push({ shipment_no: row.shipment_no, error: `plant_code ${rowPlantCode} not allowed for your branch` });
+          continue;
+        }
+
         const payload = {
-          shipment_no:        BigInt(row.shipment_no).toString(),
-          shipment_date:      normalizeDate(row.shipment_date)    || null,
-          billing_doc_number: row.billing_doc_number              || null,
-          billing_date:       normalizeDate(row.billing_date)     || null,
-          chassis_no:         row.chassis_no                      || null,
-          engine_no:          null,
-          allocation_date:    normalizeDate(row.allocation_date)  || null,
-          dispatch_date:      normalizeDate(row.dispatch_date),
-          estimated_delivery_date: null,
-          delivery_date:      null,
-          current_status:     currentStatus,
+          shipment_no:             BigInt(row.shipment_no).toString(),
+          plant_code:              rowPlantCode || scopePlant || null,
+          shipment_date:           normalizeDate(row.shipment_date)   || null,
+          billing_doc_number:      row.billing_doc_number             || null,
+          billing_date:            normalizeDate(row.billing_date)    || null,
+          chassis_no:              row.chassis_no                     || null,
+          engine_no:               null,
+          allocation_date:         normalizeDate(row.allocation_date) || null,
+          dispatch_date:           dispatchDate,
+          estimated_delivery_date: estimatedDeliveryDate,
+          delivery_date:           null,
+          current_status:          currentStatus,
 
           route_id:        master.route_id        || null,
           vehicle_id:      master.vehicle_id      || null,
@@ -163,20 +206,17 @@ export const bulkCommit = async (req, res) => {
           raw_dl_number:           null,
 
           approval_status: approvalStatus,
-
-          pump1_qty: 0, pump1_rate: 0,
-          pump2_qty: 0, pump2_rate: 0,
-          pump3_qty: 0, pump3_rate: 0,
-          pump4_qty: 0, pump4_rate: 0,
-          fuel_card_qty: 0, fuel_card_rate: 0,
-          hsd_qty: 0, hsd_rate: 0,
+          fuel_entries: [],
         };
+
+        console.log("Original Dispatch Date:", row.dispatch_date);
+        console.log("Normalized Dispatch Date:", normalizeDate(row.dispatch_date));
 
         const id = await insertShipment(payload);
         inserted.push(id);
 
-        if (approvalStatus === "ACTIVE")  activeCount++;
-        else                              pendingCount++;
+        if (approvalStatus === "HOLD") holdCount++;
+        else                           pendingCount++;
 
       } catch (err) {
         console.error("❌ Row insert failed:", row.shipment_no, err.sqlMessage || err.message);
@@ -185,9 +225,9 @@ export const bulkCommit = async (req, res) => {
     }
 
     return res.json({
-      success:       true,
+      success:        true,
       inserted_count: inserted.length,
-      active_count:   activeCount,
+      hold_count:     holdCount,
       pending_count:  pendingCount,
       failed_count:   failed.length,
       failed,

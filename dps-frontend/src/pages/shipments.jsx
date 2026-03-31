@@ -1,24 +1,32 @@
 import { useEffect, useState } from "react";
 import "../assets/css/shipments.css";
+import "../assets/css/Shipments.fund.css";
 import BulkUploadModal from "../components/shipments/BulkUploadModal";
 import ShipmentView from "../components/shipments/ShipmentView";
+import { apiFetch } from "../utils/apiClient";
+import { useShipmentFilters } from "../components/shared/ShipmentFilters";
 
-const TABS = ["All", "Delivered", "Running", "Dispatched", "Accident"];
+const TABS = ["All", "Hold", "Delivered", "Running", "Dispatched", "Accident"];
 
 export default function Shipments() {
-  const [activeTab, setActiveTab]     = useState("All");
-  const [data, setData]               = useState([]);
-  const [showBulk, setShowBulk]       = useState(false);
-  const [viewingId, setViewingId]     = useState(null); // shipment_id being viewed
+  const [activeTab, setActiveTab] = useState("All");
+  const [data, setData]           = useState([]);
+  const [showBulk, setShowBulk]   = useState(false);
+  const [viewingId, setViewingId] = useState(null);
 
   useEffect(() => { fetchData(); }, [activeTab]);
 
   const fetchData = async () => {
-    const baseUrl = `${import.meta.env.VITE_API_URL}/api/shipments`;
-    const url = activeTab === "All" ? baseUrl : `${baseUrl}?status=${activeTab}`;
+    const path = activeTab === "All"  ? "/api/shipments"
+               : activeTab === "Hold" ? "/api/shipments?approval=HOLD"
+               : `/api/shipments?status=${activeTab}`;
     try {
-      const res  = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res  = await apiFetch(path);
+      if (!res || !res.ok) {
+        console.error("Fetch error:", res?.status);
+        setData([]);
+        return;
+      }
       const json = await res.json();
       setData(json.data || []);
     } catch (err) {
@@ -27,15 +35,23 @@ export default function Shipments() {
     }
   };
 
+  // Use shared filters hook
+  const { filterBar, sorted, SortTh } = useShipmentFilters(data, {
+    searchFields: ["shipment_no", "billing_doc_number", "chassis_no", "dealer_name", "material_no"],
+    defaultSort: { col: "shipment_date", dir: "desc" },
+  });
+
   /* ── Show ShipmentView instead of listing ── */
   if (viewingId) {
     return (
       <ShipmentView
         shipmentId={viewingId}
-        onBack={() => setViewingId(null)}
+        onBack={() => { setViewingId(null); fetchData(); }}
       />
     );
   }
+
+  const holdCount = data.filter(r => r.approval_status === "HOLD").length;
 
   return (
     <div className="shipments-wrapper">
@@ -52,45 +68,55 @@ export default function Shipments() {
           <button key={tab} className={`tab ${activeTab === tab ? "active" : ""}`}
             onClick={() => setActiveTab(tab)}>
             {tab}
+            {tab === "Hold" && holdCount > 0 && activeTab !== "Hold" && (
+              <span className="tab-badge">{holdCount}</span>
+            )}
           </button>
         ))}
       </div>
 
+      {/* Filter bar */}
+      {filterBar}
+
       {/* Table */}
       <div className="table-card">
-        {data.length === 0 ? (
+        {sorted.length === 0 ? (
           <p style={{ padding: 24, color: "#9ca3af" }}>No shipments available.</p>
         ) : (
           <table>
             <thead>
               <tr>
-                <th>Shipment No</th>
-                <th>Material No</th>
-                <th>Route</th>
-                <th>Dealer</th>
-                <th>Status</th>
+                <SortTh col="shipment_no">Shipment No</SortTh>
+                <SortTh col="material_no">Material No</SortTh>
+                <SortTh col="dispatch_plant">Route</SortTh>
+                <SortTh col="dealer_name">Dealer</SortTh>
+                <SortTh col="current_status">Status</SortTh>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {data.map(row => (
-                <tr key={row.shipment_id}>
-                  <td>{row.shipment_no}</td>
-                  <td>{row.material_no || "—"}</td>
-                  <td>{row.dispatch_plant || "—"} → {row.delivery_location || "—"}</td>
-                  <td>{row.dealer_name || "—"}</td>
-                  <td>
-                    <span className={`status ${row.current_status?.toLowerCase() || ""}`}>
-                      {row.current_status || "—"}
-                    </span>
-                  </td>
-                  <td>
-                    <button className="view-btn" onClick={() => setViewingId(row.shipment_id)}>
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {sorted.map(row => {
+                const isHold = row.approval_status === "HOLD";
+                return (
+                  <tr key={row.shipment_id} className={isHold ? "tr-hold" : ""}>
+                    <td>{row.shipment_no}</td>
+                    <td>{row.material_no || "—"}</td>
+                    <td>{row.dispatch_plant || "—"} → {row.delivery_location || "—"}</td>
+                    <td>{row.dealer_name || "—"}</td>
+                    <td>
+                      <span className={`status ${row.current_status?.toLowerCase() || ""}`}>
+                        {row.current_status || "—"}
+                      </span>
+                      {isHold && <span className="hold-badge">HOLD</span>}
+                    </td>
+                    <td>
+                      <button className="view-btn" onClick={() => setViewingId(row.shipment_id)}>
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
