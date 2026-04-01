@@ -454,8 +454,8 @@ export const getShipments = async ({ status, approval, plantCode } = {}) => {
     LEFT JOIN vehicle_master v        ON v.vehicle_id        = s.vehicle_id
     LEFT JOIN driver_route_master dr  ON dr.driver_route_id  = s.driver_route_id
     LEFT JOIN driver_master dm        ON dm.driver_id        = dr.driver_id
-    LEFT JOIN route_toll_master rt    ON rt.route_id         = r.route_id AND rt.is_active = 1
-    LEFT JOIN route_tax_master rtax   ON rtax.route_id       = r.route_id AND rtax.is_active = 1
+    LEFT JOIN route_toll_master rt    ON rt.route_id         = s.route_id AND rt.vehicle_id = s.vehicle_id AND rt.is_active = 1
+    LEFT JOIN route_tax_master rtax   ON rtax.route_id       = s.route_id AND rtax.vehicle_id = s.vehicle_id AND rtax.is_active = 1
     WHERE s.is_active = 1 AND s.approval_status IN ('ACTIVE', 'HOLD')
   `;
   const params = [];
@@ -499,8 +499,8 @@ export const getShipmentById = async (shipmentId) => {
     LEFT JOIN vehicle_master v        ON v.vehicle_id        = s.vehicle_id
     LEFT JOIN driver_route_master dr  ON dr.driver_route_id  = s.driver_route_id
     LEFT JOIN driver_master dm        ON dm.driver_id        = dr.driver_id
-    LEFT JOIN route_toll_master rt    ON rt.route_id         = r.route_id AND rt.is_active = 1
-    LEFT JOIN route_tax_master rtax   ON rtax.route_id       = r.route_id AND rtax.is_active = 1
+    LEFT JOIN route_toll_master rt    ON rt.route_id         = s.route_id AND rt.vehicle_id = s.vehicle_id AND rt.is_active = 1
+    LEFT JOIN route_tax_master rtax   ON rtax.route_id       = s.route_id AND rtax.vehicle_id = s.vehicle_id AND rtax.is_active = 1
     LEFT JOIN finance f               ON f.shipment_id       = s.shipment_id
     WHERE s.shipment_id = ?
     LIMIT 1`,
@@ -713,8 +713,8 @@ export const generateFundRequest = async (shipmentId) => {
             rtax.route_tax_id
      FROM shipment s
      LEFT JOIN route_master r         ON r.route_id  = s.route_id
-     LEFT JOIN route_toll_master rt   ON rt.route_id = s.route_id AND rt.is_active = 1
-     LEFT JOIN route_tax_master rtax  ON rtax.route_id = s.route_id AND rtax.is_active = 1
+     LEFT JOIN route_toll_master rt   ON rt.route_id = s.route_id AND rt.vehicle_id = s.vehicle_id AND rt.is_active = 1
+     LEFT JOIN route_tax_master rtax  ON rtax.route_id = s.route_id AND rtax.vehicle_id = s.vehicle_id AND rtax.is_active = 1
      WHERE s.shipment_id = ? AND s.approval_status = 'HOLD'`,
     [shipmentId]
   );

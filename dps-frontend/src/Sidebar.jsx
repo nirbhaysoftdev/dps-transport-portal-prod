@@ -5,7 +5,7 @@ import "./assets/css/sidebar.css";
 import { getUser } from "./utils/apiClient";
 
 import DPS_LOGO from "./assets/images/DPS-logo.png";
-import DPS_ICON from "./assets/images/DPS_icon.png";
+import DPS_ICON from "./assets/images/DPS_Icon.png";
 
 /* ── SVG Icon renderer ──────────────────────────────────────────── */
 const Icon = ({ d, size = 18 }) => (

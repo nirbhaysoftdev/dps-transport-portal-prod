@@ -5,7 +5,7 @@ import { appRoutes } from "./routes";
 import AppLayout from "./layout/AppLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
-import Login from "./pages/Login";
+import Login from "./pages/login";
 import { getUser } from "./utils/apiClient";
 
 function DefaultRedirect() {
@@ -20,7 +20,7 @@ export default function App() {
       <Routes>
 
         {/* ── Public: Login at both / and /login ── */}
-        <Route path="/"      element={<Login />} />
+        <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
 
         {/* ── Protected layout — pathless, wraps all app pages ── */}

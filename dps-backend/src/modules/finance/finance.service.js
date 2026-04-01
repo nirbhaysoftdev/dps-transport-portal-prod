@@ -138,7 +138,7 @@ export const getFinanceDetail = async (shipmentId) => {
      JOIN shipment s            ON s.shipment_id   = f.shipment_id
      LEFT JOIN route_master r   ON r.route_id      = s.route_id
      LEFT JOIN vehicle_master v ON v.vehicle_id    = s.vehicle_id
-     LEFT JOIN route_toll_master rt  ON rt.route_id = s.route_id AND rt.is_active = 1
+     LEFT JOIN route_toll_master rt  ON rt.route_id = s.route_id AND rt.vehicle_id = s.vehicle_id AND rt.is_active = 1
      LEFT JOIN driver_route_master dr ON dr.driver_route_id = s.driver_route_id
      WHERE f.shipment_id = ?`,
     [shipmentId]

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import "../assets/css/RejectedShipments.css";
+import "../assets/css/Rejectedshipments.css";
 import "../assets/css/shipments.css";
 import { apiFetch } from "../utils/apiClient";
 import { useShipmentFilters } from "../components/shared/ShipmentFilters";
@@ -62,18 +62,18 @@ const money = (v) =>
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════════════════ */
 export default function RejectedShipments() {
-  const [rows, setRows]           = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState("");
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [movingRow, setMovingRow] = useState(null);
   const [movingLoader, setMovingLoader] = useState(false);
-  const [toast, setToast]         = useState("");
+  const [toast, setToast] = useState("");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const res  = await apiFetch(`/api/shipments/rejected`);
+      const res = await apiFetch(`/api/shipments/rejected`);
       if (!res || !res.ok) { setRows([]); setError("Failed to load"); return; }
       const json = await res.json();
       if (json.success) setRows(json.data);
@@ -99,10 +99,10 @@ export default function RejectedShipments() {
     if (!movingRow) return;
     setMovingLoader(true);
     try {
-      const res  = await apiFetch(`/api/shipments/move-to-operations`, {
-        method:  "POST",
+      const res = await apiFetch(`/api/shipments/move-to-operations`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ shipment_id: movingRow.shipment_id }),
+        body: JSON.stringify({ shipment_id: movingRow.shipment_id }),
       });
       const json = await res.json();
       if (json.success) {

@@ -1,7 +1,7 @@
 // src/pages/Dashboard.jsx
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch, getUser, isAdmin } from "../utils/apiClient";
-import "../assets/css/Dashboard.css";
+import "../assets/css/dashboard.css";
 
 /* ══════════════════════════════════════════════════════════════════
    HELPERS

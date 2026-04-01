@@ -1,7 +1,7 @@
 // Finance.jsx
 import { useState, useEffect, useCallback, useRef } from "react";
 import { apiFetch, getUser, isAdmin, isFinance, canMakePayment } from "../utils/apiClient";
-import "../assets/css/Finance.css";
+import "../assets/css/finance.css";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -19,14 +19,14 @@ const fmtDate = (d) => {
   // Parse YYYY-MM-DD directly to avoid UTC→local timezone shift
   const str = typeof d === "string" ? d : d.toISOString();
   const [year, month, day] = str.slice(0, 10).split("-");
-  return `${day} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(month)-1]} ${year}`;
+  return `${day} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][parseInt(month) - 1]} ${year}`;
 };
 
 const MONTHS = [
-  "January","February","March","April","May","June",
-  "July","August","September","October","November","December",
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
 ];
-const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /* ── Status chips ────────────────────────────────────────────────── */
 const StatusChip = ({ status }) => (
@@ -38,13 +38,13 @@ const StatusChip = ({ status }) => (
 /* ── Payment modal ───────────────────────────────────────────────── */
 const PayModal = ({ title, onConfirm, onClose, loading }) => {
   const [file, setFile] = useState(null);
-  const [err,  setErr]  = useState("");
+  const [err, setErr] = useState("");
   const inputRef = useRef();
 
   const handleFile = (e) => {
     const f = e.target.files[0];
     if (!f) return;
-    if (!["image/png","image/jpeg"].includes(f.type)) {
+    if (!["image/png", "image/jpeg"].includes(f.type)) {
       setErr("Only PNG/JPG allowed"); return;
     }
     if (f.size > 300 * 1024) {
@@ -100,11 +100,11 @@ const PayModal = ({ title, onConfirm, onClose, loading }) => {
 
 /* ── Add Extra Expense modal ─────────────────────────────────────── */
 const ExtraModal = ({ shipmentId, onDone, onClose }) => {
-  const [desc,         setDesc]         = useState("");
+  const [desc, setDesc] = useState("");
   const [clauseReason, setClauseReason] = useState("");
-  const [amount,       setAmount]       = useState("");
-  const [loading,      setLoading]      = useState(false);
-  const [err,          setErr]          = useState("");
+  const [amount, setAmount] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
 
   const submit = async () => {
     if (!amount || isNaN(amount) || Number(amount) <= 0) {
@@ -112,7 +112,7 @@ const ExtraModal = ({ shipmentId, onDone, onClose }) => {
     }
     setLoading(true);
     try {
-      const res  = await apiFetch(`/api/finance/${shipmentId}/extra`, {
+      const res = await apiFetch(`/api/finance/${shipmentId}/extra`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description: desc, clause_reason: clauseReason, amount }),
@@ -270,9 +270,9 @@ const FinanceCalendar = ({ calData, year, month, onMonthChange, onDateClick, sel
       <div className="fn-cal-grid fn-cal-body">
         {cells.map((d, i) => {
           const status = getDotStatus(d);
-          const key    = d ? getKey(d) : `empty-${i}`;
-          const row    = d ? calMap[getKey(d)] : null;
-          const sel    = d && selectedDate === getKey(d);
+          const key = d ? getKey(d) : `empty-${i}`;
+          const row = d ? calMap[getKey(d)] : null;
+          const sel = d && selectedDate === getKey(d);
 
           return (
             <div
@@ -318,8 +318,8 @@ const BillingSummary = ({ selected, allRows, onPayNow, canPay = false }) => {
     ? allRows.filter(r => selected.includes(r.shipment_id) && r.payment_status !== "paid")
     : [];
 
-  const grandTotal  = rows.reduce((s, r) => s + Number(r.grand_total), 0);
-  const baseTotals  = rows.reduce((s, r) => s + Number(r.base_total), 0);
+  const grandTotal = rows.reduce((s, r) => s + Number(r.grand_total), 0);
+  const baseTotals = rows.reduce((s, r) => s + Number(r.base_total), 0);
   const extraTotals = rows.reduce((s, r) => s + Number(r.extra_total || 0), 0);
   const pendingRows = rows.filter(r => r.payment_status === "pending");
 
@@ -337,7 +337,7 @@ const BillingSummary = ({ selected, allRows, onPayNow, canPay = false }) => {
         <div className="fn-stat-row">
           <span className="fn-stat-label">Dates</span>
           <span className="fn-stat-val">
-            {[...new Set(rows.map(r => r.dispatch_date?.slice(0,10)))].length}
+            {[...new Set(rows.map(r => r.dispatch_date?.slice(0, 10)))].length}
           </span>
         </div>
       </div>
@@ -384,22 +384,22 @@ const BillingSummary = ({ selected, allRows, onPayNow, canPay = false }) => {
    DETAIL DRAWER — single shipment finance details
 ══════════════════════════════════════════════════════════════════ */
 const DetailDrawer = ({ shipmentId, onClose, onRefresh }) => {
-  const [data,        setData]        = useState(null);
-  const [loading,     setLoading]     = useState(true);
-  const [payModal,    setPayModal]    = useState(false);   // pay base
-  const [extraModal,  setExtraModal]  = useState(false);   // add extra
-  const [payExtra,    setPayExtra]    = useState(null);    // pay extra {id}
-  const [slipView,    setSlipView]    = useState(null);
-  const [actionLoad,  setActionLoad]  = useState(false);
-  const [toast,       setToast]       = useState("");
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [payModal, setPayModal] = useState(false);   // pay base
+  const [extraModal, setExtraModal] = useState(false);   // add extra
+  const [payExtra, setPayExtra] = useState(null);    // pay extra {id}
+  const [slipView, setSlipView] = useState(null);
+  const [actionLoad, setActionLoad] = useState(false);
+  const [toast, setToast] = useState("");
 
   const fetchDetail = useCallback(async () => {
     setLoading(true);
     try {
-      const res  = await apiFetch(`/api/finance/${shipmentId}`);
+      const res = await apiFetch(`/api/finance/${shipmentId}`);
       if (!res) return; const json = await res.json();
       if (json.success) setData(json.data);
-    } catch {}
+    } catch { }
     finally { setLoading(false); }
   }, [shipmentId]);
 
@@ -415,7 +415,7 @@ const DetailDrawer = ({ shipmentId, onClose, onRefresh }) => {
     const fd = new FormData();
     fd.append("slip", file);
     try {
-      const res  = await apiFetch(`/api/finance/${shipmentId}/pay`, { method: "POST", body: fd });
+      const res = await apiFetch(`/api/finance/${shipmentId}/pay`, { method: "POST", body: fd });
       if (!res) return; const json = await res.json();
       if (json.success) { showToast("Payment marked as paid"); setPayModal(false); fetchDetail(); onRefresh(); }
       else showToast(json.message);
@@ -428,7 +428,7 @@ const DetailDrawer = ({ shipmentId, onClose, onRefresh }) => {
     const fd = new FormData();
     fd.append("slip", file);
     try {
-      const res  = await apiFetch(`/api/finance/extra/${payExtra}/pay`, { method: "POST", body: fd });
+      const res = await apiFetch(`/api/finance/extra/${payExtra}/pay`, { method: "POST", body: fd });
       if (!res) return; const json = await res.json();
       if (json.success) { showToast("Extra expense paid"); setPayExtra(null); fetchDetail(); onRefresh(); }
       else showToast(json.message);
@@ -441,7 +441,7 @@ const DetailDrawer = ({ shipmentId, onClose, onRefresh }) => {
     try {
       await apiFetch(`/api/finance/extra/${id}`, { method: "DELETE" });
       fetchDetail(); onRefresh();
-    } catch {}
+    } catch { }
   };
 
   return (
@@ -469,11 +469,11 @@ const DetailDrawer = ({ shipmentId, onClose, onRefresh }) => {
               <div className="fn-detail-amounts">
                 {(() => {
                   // fuel_total = SUM(shipment_fuel_entries.amount) — from API via subquery
-                  const fuelTotal   = Number(data.fuel_total   || 0);
-                  const tollTotal   = Number(data.manual_toll_fix_toll||0) + Number(data.toll_amount||0);
-                  const driverTotal = Number(data.driver_payment||0) + Number(data.return_fare||0);
-                  const taxTotal    = Math.max(0, Number(data.base_total) - fuelTotal - tollTotal - driverTotal);
-                  const extraTotal  = data.extras?.reduce((s,e) => s + Number(e.extra_expense), 0) || 0;
+                  const fuelTotal = Number(data.fuel_total || 0);
+                  const tollTotal = Number(data.manual_toll_fix_toll || 0) + Number(data.toll_amount || 0);
+                  const driverTotal = Number(data.driver_payment || 0) + Number(data.return_fare || 0);
+                  const taxTotal = Math.max(0, Number(data.base_total) - fuelTotal - tollTotal - driverTotal);
+                  const extraTotal = data.extras?.reduce((s, e) => s + Number(e.extra_expense), 0) || 0;
                   return (
                     <>
                       <div className="fn-detail-amount-row">
@@ -602,27 +602,27 @@ const DetailDrawer = ({ shipmentId, onClose, onRefresh }) => {
    MAIN FINANCE PAGE
 ══════════════════════════════════════════════════════════════════ */
 export default function Finance() {
-  const today    = new Date();
-  const user     = getUser();
+  const today = new Date();
+  const user = getUser();
   const _isAdmin = isAdmin();
-  const _canPay  = canMakePayment(); // admin OR finance role can pay
+  const _canPay = canMakePayment(); // admin OR finance role can pay
 
-  const [year,        setYear]        = useState(today.getFullYear());
-  const [month,       setMonth]       = useState(today.getMonth() + 1);
-  const [calData,     setCalData]     = useState([]);
-  const [rows,        setRows]        = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [statusFilter,setStatusFilter]= useState("all");
-  const [search,      setSearch]      = useState("");
-  const [selected,    setSelected]    = useState([]);
-  const [selectedDate,setSelectedDate]= useState(null);
-  const [bulkModal,   setBulkModal]   = useState(false);
-  const [bulkLoad,    setBulkLoad]    = useState(false);
-  const [drawer,      setDrawer]      = useState(null);
-  const [toast,       setToast]       = useState("");
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth() + 1);
+  const [calData, setCalData] = useState([]);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [bulkModal, setBulkModal] = useState(false);
+  const [bulkLoad, setBulkLoad] = useState(false);
+  const [drawer, setDrawer] = useState(null);
+  const [toast, setToast] = useState("");
   // Branch filter — admin can select any branch, finance sees all by default
   const [branchFilter, setBranchFilter] = useState(null);
-  const [plants,       setPlants]       = useState([]);
+  const [plants, setPlants] = useState([]);
 
   // Load plant list for admin + finance branch selector
   useEffect(() => {
@@ -630,7 +630,7 @@ export default function Finance() {
     apiFetch("/api/auth/plants")
       .then(r => r?.json())
       .then(j => { if (j?.success) setPlants(j.data); })
-      .catch(() => {});
+      .catch(() => { });
   }, [_isAdmin]);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 3200); };
@@ -640,11 +640,11 @@ export default function Finance() {
     try {
       let url = `/api/finance/calendar?year=${year}&month=${month}`;
       if (branchFilter) url += `&plant_code=${branchFilter}`;
-      const res  = await apiFetch(url);
+      const res = await apiFetch(url);
       if (!res) return;
       const json = await res.json();
       if (json?.success) setCalData(json.data);
-    } catch {}
+    } catch { }
   }, [year, month, branchFilter]);
 
   /* ── fetch table rows ── */
@@ -653,12 +653,12 @@ export default function Finance() {
     try {
       let url = `/api/finance?status=${statusFilter}`;
       if (selectedDate) url += `&from=${selectedDate}&to=${selectedDate}`;
-      if (branchFilter)  url += `&plant_code=${branchFilter}`;
-      const res  = await apiFetch(url);
+      if (branchFilter) url += `&plant_code=${branchFilter}`;
+      const res = await apiFetch(url);
       if (!res) return; // null = 401, apiClient already redirected to login
       const json = await res.json();
       if (json.success) setRows(json.data);
-    } catch {}
+    } catch { }
     finally { setLoading(false); }
   }, [statusFilter, selectedDate, branchFilter]);
 
@@ -697,7 +697,7 @@ export default function Finance() {
     const raw = r.dispatch_date;
     const key = !raw ? "—"
       : typeof raw === "string" ? raw.slice(0, 10)
-      : new Date(raw).toISOString().slice(0, 10);
+        : new Date(raw).toISOString().slice(0, 10);
     if (!acc[key]) acc[key] = [];
     acc[key].push(r);
     return acc;
@@ -707,9 +707,9 @@ export default function Finance() {
 
   /* ── group summary ── */
   const groupSummary = (list) => ({
-    tax:    list.reduce((s, r) => s + Number(r.base_total), 0),
-    extra:  list.reduce((s, r) => s + Number(r.extra_total || 0), 0),
-    grand:  list.reduce((s, r) => s + Number(r.grand_total), 0),
+    tax: list.reduce((s, r) => s + Number(r.base_total), 0),
+    extra: list.reduce((s, r) => s + Number(r.extra_total || 0), 0),
+    grand: list.reduce((s, r) => s + Number(r.grand_total), 0),
   });
 
   /* ── bulk pay ── */
@@ -719,7 +719,7 @@ export default function Finance() {
     fd.append("slip", file);
     fd.append("shipment_ids", JSON.stringify(selected));
     try {
-      const res  = await apiFetch(`/api/finance/bulk-pay`, { method: "POST", body: fd });
+      const res = await apiFetch(`/api/finance/bulk-pay`, { method: "POST", body: fd });
       if (!res) return; const json = await res.json();
       if (json.success) {
         showToast(json.message);
@@ -864,7 +864,7 @@ export default function Finance() {
               <tbody>
                 {sortedKeys.map(dateKey => {
                   const list = groups[dateKey];
-                  const sum  = groupSummary(list);
+                  const sum = groupSummary(list);
                   const allSelected = list.every(r => selected.includes(r.shipment_id));
 
                   return [
