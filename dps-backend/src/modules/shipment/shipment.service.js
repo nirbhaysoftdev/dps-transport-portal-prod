@@ -397,6 +397,7 @@ export const getApprovalShipments = async ({ plantCode } = {}) => {
     WHERE s.approval_status = 'APPROVAL'`;
   const params = [];
   if (plantCode) { sql += ` AND s.plant_code = ?`; params.push(plantCode); }
+  sql += ` GROUP BY s.shipment_id`;
   sql += ` ORDER BY s.created_at DESC`;
   const [rows] = await db.query(sql, params);
   return rows;
@@ -462,6 +463,7 @@ export const getShipments = async ({ status, approval, plantCode } = {}) => {
   if (approval)   { sql += " AND s.approval_status = ?"; params.push(approval); }
   if (status)     { sql += " AND s.current_status = ?";  params.push(status); }
   if (plantCode)  { sql += " AND s.plant_code = ?";      params.push(plantCode); }
+  sql += " GROUP BY s.shipment_id";
   sql += " ORDER BY s.created_at DESC";
   const [rows] = await db.query(sql, params);
   return rows;
@@ -799,6 +801,7 @@ export const getActiveShipments = async ({ plantCode, from, to } = {}) => {
   if (plantCode) { sql += ` AND s.plant_code = ?`; params.push(plantCode); }
   if (from)      { sql += ` AND DATE(s.dispatch_date) >= ?`; params.push(from); }
   if (to)        { sql += ` AND DATE(s.dispatch_date) <= ?`; params.push(to); }
+  sql += ` GROUP BY s.shipment_id`;
   sql += ` ORDER BY s.dispatch_date DESC, s.created_at DESC`;
   const [rows] = await db.query(sql, params);
   return rows;
