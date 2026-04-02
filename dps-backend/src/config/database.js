@@ -10,13 +10,15 @@ export const db = mysql.createPool({
   user: env.DB.USER,
   password: env.DB.PASSWORD,
   database: env.DB.NAME,
-
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
 });
 
-// 🔍 Test connection once at startup
+db.on("connection", (connection) => {
+  connection.query("SET SESSION sql_mode = \'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION\'");
+});
+
 (async () => {
   try {
     const connection = await db.getConnection();

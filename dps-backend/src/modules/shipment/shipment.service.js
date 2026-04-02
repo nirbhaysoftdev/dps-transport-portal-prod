@@ -379,7 +379,7 @@ export const getPendingShipments = async ({ plantCode } = {}) => {
   const params = [];
   if (plantCode) { sql += ` AND plant_code = ?`; params.push(plantCode); }
   sql += ` ORDER BY created_at DESC`;
-  const [rows] = await db.query(sql, params);
+  console.log("🔍 SQL:", sql); const [rows] = await db.query(sql, params); console.log("🔍 ROW COUNT:", rows.length);
   return rows;
 };
 
@@ -399,7 +399,7 @@ export const getApprovalShipments = async ({ plantCode } = {}) => {
   if (plantCode) { sql += ` AND s.plant_code = ?`; params.push(plantCode); }
   sql += ` GROUP BY s.shipment_id`;
   sql += ` ORDER BY s.created_at DESC`;
-  const [rows] = await db.query(sql, params);
+  console.log("🔍 SQL:", sql); const [rows] = await db.query(sql, params); console.log("🔍 ROW COUNT:", rows.length);
   return rows;
 };
 
@@ -448,8 +448,8 @@ export const getShipments = async ({ status, approval, plantCode } = {}) => {
       v.material_no, v.model, v.avg,
       dm.driver_name, dm.driver_dl,
       dr.driver_route_id, dr.driver_payment, dr.return_fare,
-      rt.manual_toll_fix_toll, rt.toll_amount,
-      rtax.route_tax_id
+      MAX(rt.manual_toll_fix_toll) AS manual_toll_fix_toll, MAX(rt.toll_amount) AS toll_amount,
+      MAX(rtax.route_tax_id) AS route_tax_id
     FROM shipment s
     LEFT JOIN route_master r          ON r.route_id          = s.route_id
     LEFT JOIN vehicle_master v        ON v.vehicle_id        = s.vehicle_id
@@ -465,7 +465,7 @@ export const getShipments = async ({ status, approval, plantCode } = {}) => {
   if (plantCode)  { sql += " AND s.plant_code = ?";      params.push(plantCode); }
   sql += " GROUP BY s.shipment_id";
   sql += " ORDER BY s.created_at DESC";
-  const [rows] = await db.query(sql, params);
+  console.log("🔍 SQL:", sql); const [rows] = await db.query(sql, params); console.log("🔍 ROW COUNT:", rows.length);
   return rows;
 };
 
@@ -490,8 +490,8 @@ export const getShipmentById = async (shipmentId) => {
       v.material_no, v.model, v.avg,
       dm.driver_name, dm.driver_dl,
       dr.driver_payment, dr.return_fare, dr.additional_payment,
-      rt.manual_toll_fix_toll, rt.toll_amount,
-      rtax.route_tax_id,
+      MAX(rt.manual_toll_fix_toll) AS manual_toll_fix_toll, MAX(rt.toll_amount) AS toll_amount,
+      MAX(rtax.route_tax_id) AS route_tax_id,
       ${STATE_TAX_COLUMNS.map(c => `rtax.${c}`).join(", ")},
       f.payment_status  AS finance_payment_status,
       f.payment_date    AS finance_payment_date,
@@ -653,7 +653,7 @@ export const getTrackingShipments = async ({ plantCode } = {}) => {
   const params = [];
   if (plantCode) { sql += ` AND s.plant_code = ?`; params.push(plantCode); }
   sql += ` ORDER BY s.dispatch_date DESC`;
-  const [rows] = await db.query(sql, params);
+  console.log("🔍 SQL:", sql); const [rows] = await db.query(sql, params); console.log("🔍 ROW COUNT:", rows.length);
   return rows;
 };
 
@@ -711,8 +711,8 @@ export const generateFundRequest = async (shipmentId) => {
   // Fetch shipment + joined data needed for validation
   const [[shipment]] = await db.query(
     `SELECT s.*,
-            rt.manual_toll_fix_toll, rt.toll_amount,
-            rtax.route_tax_id
+            MAX(rt.manual_toll_fix_toll) AS manual_toll_fix_toll, MAX(rt.toll_amount) AS toll_amount,
+            MAX(rtax.route_tax_id) AS route_tax_id
      FROM shipment s
      LEFT JOIN route_master r         ON r.route_id  = s.route_id
      LEFT JOIN route_toll_master rt   ON rt.route_id = s.route_id AND rt.vehicle_id = s.vehicle_id AND rt.is_active = 1
@@ -803,7 +803,7 @@ export const getActiveShipments = async ({ plantCode, from, to } = {}) => {
   if (to)        { sql += ` AND DATE(s.dispatch_date) <= ?`; params.push(to); }
   sql += ` GROUP BY s.shipment_id`;
   sql += ` ORDER BY s.dispatch_date DESC, s.created_at DESC`;
-  const [rows] = await db.query(sql, params);
+  console.log("🔍 SQL:", sql); const [rows] = await db.query(sql, params); console.log("🔍 ROW COUNT:", rows.length);
   return rows;
 };
 
@@ -815,7 +815,7 @@ export const getRejectedShipments = async ({ plantCode } = {}) => {
   const params = [];
   if (plantCode) { sql += ` AND plant_code = ?`; params.push(plantCode); }
   sql += ` ORDER BY created_at DESC`;
-  const [rows] = await db.query(sql, params);
+  console.log("🔍 SQL:", sql); const [rows] = await db.query(sql, params); console.log("🔍 ROW COUNT:", rows.length);
   return rows;
 };
 

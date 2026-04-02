@@ -15,7 +15,7 @@ import {
 
 const router    = express.Router();
 const podUpload = multer({
-  dest:   "src/uploads/tmp",
+  dest:   "/var/www/dps/dps-backend/src/uploads/tmp",
   limits: { fileSize: 400 * 1024 },
 });
 
