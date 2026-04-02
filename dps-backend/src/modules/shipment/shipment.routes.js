@@ -1,6 +1,9 @@
 // src/modules/shipment/shipment.routes.js
 import express from "express";
 import multer from "multer";
+import path from "path";
+import { fileURLToPath } from "url";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import {
   createShipment, listShipments, listPendingShipments, listApprovalShipments,
   approvePendingShipment, adminApproveShipmentHandler, rejectPendingShipment, bulkConfirmShipments,
@@ -15,7 +18,7 @@ import {
 
 const router    = express.Router();
 const podUpload = multer({
-  dest:   "/var/www/dps/dps-backend/src/uploads/tmp",
+  dest: path.resolve(__dirname, "../../uploads/tmp"),
   limits: { fileSize: 400 * 1024 },
 });
 

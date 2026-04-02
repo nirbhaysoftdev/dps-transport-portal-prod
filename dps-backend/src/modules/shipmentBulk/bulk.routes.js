@@ -1,9 +1,12 @@
 import express from "express";
 import multer from "multer";
+import path from "path";
+import { fileURLToPath } from "url";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { bulkPreview,bulkCommit } from "./bulk.controller.js";
 
 const router = express.Router();
-const upload = multer({ dest: "/var/www/dps/dps-backend/src/uploads/csv" });
+const upload = multer({ dest: path.resolve(__dirname, "../../uploads/csv") });
 
 router.post("/preview", upload.single("file"), bulkPreview);
 router.post("/commit", bulkCommit);
