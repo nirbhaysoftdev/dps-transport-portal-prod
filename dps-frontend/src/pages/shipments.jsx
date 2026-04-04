@@ -97,6 +97,7 @@ export default function Shipments() {
             <tbody>
               {sorted.map(row => {
                 const isHold = row.approval_status === "HOLD";
+                const isFundGenerated = row.approval_status === "ACTIVE";
                 return (
                   <tr key={row.shipment_id} className={isHold ? "tr-hold" : ""}>
                     <td>{row.shipment_no}</td>
@@ -108,6 +109,7 @@ export default function Shipments() {
                         {row.current_status || "—"}
                       </span>
                       {isHold && <span className="hold-badge">HOLD</span>}
+                      {isFundGenerated && <span className="fund-generated-badge">Fund Generated</span>}
                     </td>
                     <td>
                       <button className="view-btn" onClick={() => setViewingId(row.shipment_id)}>

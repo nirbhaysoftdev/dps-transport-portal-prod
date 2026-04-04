@@ -92,7 +92,7 @@ export default function ApprovalShipments() {
         {canEdit && (
           <div style={{
             position: "fixed", bottom: 0, left: 240, right: 0, padding: "16px 24px",
-            background: "#fff", borderTop: "1px solid #e5e7eb", display: "flex", justifyContent: "flex-end",
+             borderTop: "1px solid #e5e7eb", display: "flex", justifyContent: "flex-end",
             gap: "12px", zIndex: 1000, boxShadow: "0 -4px 6px -1px rgba(0,0,0,0.05)"
           }}>
             <button className="ps-reject-btn" style={{ padding: "10px 24px", fontSize: "15px" }} 

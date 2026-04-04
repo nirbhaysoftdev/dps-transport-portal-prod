@@ -387,6 +387,17 @@
 .tr-hold { background: #fffbeb; }
 .tr-hold:hover { background: #fef3c7 !important; }
 
+.fund-generated-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #10b981;
+  color: #fff;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
 @media (max-width: 768px) {
   .sf-toolbar { padding: 10px; }
   .sf-row { flex-direction: column; }

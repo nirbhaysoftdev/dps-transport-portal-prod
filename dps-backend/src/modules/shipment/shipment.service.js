@@ -523,7 +523,6 @@ export const updateShipment = async (shipmentId, data) => {
   await db.query(
     `UPDATE shipment SET
       current_status          = ?,
-      dispatch_date           = ?,
       delivery_date           = ?,
       estimated_delivery_date = ?,
       reason_for_delay        = ?,
@@ -531,7 +530,6 @@ export const updateShipment = async (shipmentId, data) => {
     WHERE shipment_id = ?`,
     [
       data.current_status,
-      data.dispatch_date           || null,
       data.delivery_date           || null,
       data.estimated_delivery_date || null,
       data.reason_for_delay        || null,
@@ -545,7 +543,7 @@ export const updateShipment = async (shipmentId, data) => {
     await replaceFuelEntries(shipmentId, data.fuel_entries);
   }
 
-  // Update toll if provided
+  // Update toll if provided — upsert so admin overrides always persist
   if (data.toll && data.route_id && data.vehicle_id) {
     const [existing] = await db.query(
       `SELECT route_toll_id FROM route_toll_master WHERE route_id = ? AND vehicle_id = ? LIMIT 1`,
@@ -556,10 +554,16 @@ export const updateShipment = async (shipmentId, data) => {
         `UPDATE route_toll_master SET manual_toll_fix_toll = ?, toll_amount = ? WHERE route_toll_id = ?`,
         [data.toll.manual_toll_fix_toll || null, data.toll.toll_amount || null, existing[0].route_toll_id]
       );
+    } else {
+      await db.query(
+        `INSERT INTO route_toll_master (route_id, vehicle_id, manual_toll_fix_toll, toll_amount, is_active)
+         VALUES (?, ?, ?, ?, 1)`,
+        [data.route_id, data.vehicle_id, data.toll.manual_toll_fix_toll || null, data.toll.toll_amount || null]
+      );
     }
   }
 
-  // Update tax if provided
+  // Update tax if provided — upsert so admin overrides always persist
   if (data.tax && data.route_id && data.vehicle_id) {
     const validCols = Object.keys(data.tax).filter(col => STATE_TAX_COLUMNS.includes(col));
     if (validCols.length > 0) {
@@ -573,7 +577,58 @@ export const updateShipment = async (shipmentId, data) => {
           `UPDATE route_tax_master SET ${setClauses} WHERE route_tax_id = ?`,
           [...validCols.map(col => data.tax[col]), existing[0].route_tax_id]
         );
+      } else {
+        const cols = ["route_id", "vehicle_id", "is_active", ...validCols].join(", ");
+        const placeholders = ["?", "?", "1", ...validCols.map(() => "?")].join(", ");
+        await db.query(
+          `INSERT INTO route_tax_master (${cols}) VALUES (${placeholders})`,
+          [data.route_id, data.vehicle_id, ...validCols.map(col => data.tax[col])]
+        );
       }
+    }
+  }
+
+  // Update driver if provided — find or create in driver_master, then relink
+  if (data.driver?.dl_number && data.driver?.driver_name) {
+    const [existingDriver] = await db.query(
+      `SELECT driver_id FROM driver_master WHERE driver_dl = ? LIMIT 1`,
+      [data.driver.dl_number]
+    );
+    let driverId;
+    if (existingDriver.length > 0) {
+      driverId = existingDriver[0].driver_id;
+      await db.query(
+        `UPDATE driver_master SET driver_name = ? WHERE driver_id = ?`,
+        [data.driver.driver_name, driverId]
+      );
+    } else {
+      const [ins] = await db.query(
+        `INSERT INTO driver_master (driver_name, driver_dl, is_active) VALUES (?, ?, 1)`,
+        [data.driver.driver_name, data.driver.dl_number]
+      );
+      driverId = ins.insertId;
+    }
+
+    const [[shipRow]] = await db.query(
+      `SELECT driver_route_id FROM shipment WHERE shipment_id = ? LIMIT 1`,
+      [shipmentId]
+    );
+
+    if (shipRow?.driver_route_id) {
+      await db.query(
+        `UPDATE driver_route_master SET driver_id = ? WHERE driver_route_id = ?`,
+        [driverId, shipRow.driver_route_id]
+      );
+    } else if (data.route_id) {
+      const [drIns] = await db.query(
+        `INSERT INTO driver_route_master (route_id, driver_id, driver_payment, return_fare, additional_payment, is_active)
+         VALUES (?, ?, NULL, NULL, 0, 1)`,
+        [data.route_id, driverId]
+      );
+      await db.query(
+        `UPDATE shipment SET driver_route_id = ? WHERE shipment_id = ?`,
+        [drIns.insertId, shipmentId]
+      );
     }
   }
 
@@ -734,8 +789,7 @@ export const generateFundRequest = async (shipmentId) => {
   const hasToll = Number(shipment.manual_toll_fix_toll) > 0 || Number(shipment.toll_amount) > 0;
   if (!hasToll) missing.push("Toll (Manual Fix Toll or Toll Amount)");
 
-  // Tax — at least one state tax row must exist
-  if (!shipment.route_tax_id) missing.push("State Tax (at least one state)");
+  // Tax is optional — null or 0 is acceptable when route-vehicle is matched
 
   if (missing.length > 0) return { ok: false, missing };
 

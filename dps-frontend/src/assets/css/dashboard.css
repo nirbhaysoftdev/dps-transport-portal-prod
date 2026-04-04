@@ -143,108 +143,113 @@ body {
 /* ── KPI Card ────────────────────────────────────────────────────── */
 .db-kpi-card {
   background: #fff;
-  border-radius: 14px;
-  padding: 20px 22px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  border-left: 4px solid transparent;
+  border-radius: 16px;
+  padding: 20px 20px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 6px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   transition: transform 0.15s, box-shadow 0.15s;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .db-kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 32px rgba(0, 0, 0, 0.07);
 }
 
-.db-kpi-card--orange {
-  border-left-color: #ff6d41;
-}
+.db-kpi-card--orange {}
+.db-kpi-card--blue   {}
+.db-kpi-card--green  {}
+.db-kpi-card--amber  {}
+.db-kpi-card--red    {}
 
-.db-kpi-card--blue {
-  border-left-color: #3b82f6;
-}
-
-.db-kpi-card--green {
-  border-left-color: #10b981;
-}
-
-.db-kpi-card--amber {
-  border-left-color: #f59e0b;
-}
-
-.db-kpi-card--red {
-  border-left-color: #ef4444;
-}
-
-.db-kpi-top {
+.db-kpi-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.db-kpi-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.db-kpi-dots {
+  font-size: 18px;
+  color: #d1d5db;
+  cursor: pointer;
+  line-height: 1;
+  letter-spacing: 1px;
+  padding: 0 2px;
 }
 
 .db-kpi-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
-.db-kpi-icon--orange {
-  background: #fff0eb;
-}
-
-.db-kpi-icon--blue {
-  background: #eff6ff;
-}
-
-.db-kpi-icon--green {
-  background: #f0fdf4;
-}
-
-.db-kpi-icon--amber {
-  background: #fffbeb;
-}
-
-.db-kpi-icon--red {
-  background: #fff5f5;
-}
+.db-kpi-icon--orange { background: #fff0eb; }
+.db-kpi-icon--blue   { background: #eff6ff; }
+.db-kpi-icon--green  { background: #f0fdf4; }
+.db-kpi-icon--amber  { background: #fffbeb; }
+.db-kpi-icon--red    { background: #fff5f5; }
 
 .db-kpi-label {
   font-size: 12.5px;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-weight: 500;
+  color: #9ca3af;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .db-kpi-value {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
   color: #1a1f3a;
-  font-family: "Sora", sans-serif;
-  line-height: 1;
-  margin-bottom: 8px;
+  font-family: "Sora", "DM Sans", sans-serif;
+  line-height: 1.1;
+  margin-bottom: 6px;
 }
 
 .db-kpi-sub {
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-bottom: 10px;
 }
 
 .db-kpi-sub-val {
-  font-size: 13px;
-  font-weight: 700;
-  color: #ff6d41;
+  font-size: 12px;
+  font-weight: 600;
+  color: #10b981;
 }
 
 .db-kpi-sub-lbl {
   font-size: 12px;
   color: #9ca3af;
+}
+
+/* sparkline strip at bottom of KPI card */
+.db-kpi-spark {
+  margin-top: auto;
+  height: 52px;
+  margin-left: -20px;
+  margin-right: -20px;
+}
+
+.db-kpi-spark svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 /* ── Skeleton loading ────────────────────────────────────────────── */
@@ -299,7 +304,7 @@ body {
 /* ── Charts Row ──────────────────────────────────────────────────── */
 .db-charts-row {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr 400px;
   gap: 18px;
   margin-bottom: 18px;
 }
@@ -314,69 +319,47 @@ body {
   font-size: 14px;
   font-weight: 700;
   color: #1a1f3a;
-  margin-bottom: 18px;
+  margin-bottom: 0;
   font-family: "Sora", sans-serif;
 }
 
-/* ── Trend Chart ─────────────────────────────────────────────────── */
+.db-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.db-card-badge {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── Trend Card (SVG area chart) ─────────────────────────────────── */
 .db-trend-card {
   background: #fff;
-  border-radius: 14px;
-  padding: 22px 24px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  padding: 22px 24px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 6px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.db-trend-chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  height: 160px;
-  padding-top: 24px;
+.db-area-wrap {
+  width: 100%;
+  height: 200px;
 }
 
-.db-trend-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.db-area-svg {
+  width: 100%;
   height: 100%;
-  gap: 6px;
-}
-
-.db-trend-bar-wrap {
-  flex: 1;
-  width: 100%;
-  display: flex;
-  align-items: flex-end;
-}
-
-.db-trend-bar {
-  width: 100%;
-  background: linear-gradient(180deg, #ff6d41, #ff9a7b);
-  border-radius: 6px 6px 0 0;
-  min-height: 6px;
-  position: relative;
-  transition: height 0.4s ease;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-}
-
-.db-trend-bar-val {
-  position: absolute;
-  top: -20px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #374151;
-  white-space: nowrap;
-}
-
-.db-trend-month {
-  font-size: 11px;
-  color: #9ca3af;
-  font-weight: 500;
-  text-align: center;
-  white-space: nowrap;
+  overflow: visible;
 }
 
 .db-trend-empty {
@@ -386,34 +369,95 @@ body {
   justify-content: center;
   color: #9ca3af;
   font-size: 13px;
+  height: 160px;
 }
 
-/* ── Status Bar ──────────────────────────────────────────────────── */
+/* ── Status Card (donut chart) ───────────────────────────────────── */
 .db-status-card {
   background: #fff;
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 22px 24px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 6px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.db-status-bar {
+.db-donut-layout {
   display: flex;
-  height: 12px;
-  border-radius: 999px;
-  overflow: hidden;
-  gap: 2px;
-  margin-bottom: 20px;
+  align-items: center;
+  gap: 16px;
 }
 
-.db-status-segment {
-  border-radius: 999px;
-  transition: width 0.4s ease;
+.db-donut-wrap {
+  flex-shrink: 0;
+  width: 144px;
+  height: 144px;
 }
 
-.db-status-legend {
+.db-donut-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.db-donut-seg {
+  transition: opacity 0.15s;
+}
+
+.db-donut-seg:hover {
+  opacity: 0.82;
+}
+
+.db-donut-val {
+  font-size: 15px;
+  font-weight: 700;
+  fill: #1a1f3a;
+  font-family: "Sora", sans-serif;
+}
+
+.db-donut-lbl {
+  font-size: 10px;
+  fill: #9ca3af;
+  font-weight: 500;
+}
+
+.db-donut-legend {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
+  min-width: 0;
+}
+
+.db-donut-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.db-donut-row-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.db-donut-pct {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.db-donut-track {
+  height: 4px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.db-donut-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
 }
 
 .db-legend-item {
@@ -423,30 +467,38 @@ body {
 }
 
 .db-legend-dot {
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 .db-legend-label {
-  font-size: 13px;
+  font-size: 12px;
   color: #374151;
   flex: 1;
+  min-width: 0;
 }
 
 .db-legend-val {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #1a1f3a;
+  white-space: nowrap;
 }
 
 /* ── Finance Summary ─────────────────────────────────────────────── */
 .db-finance-card {
   background: #fff;
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 22px 24px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 6px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.db-finance-card .db-card-title,
+.db-pumps-card .db-card-title,
+.db-map-card .db-card-title {
   margin-bottom: 18px;
 }
 
@@ -506,4 +558,307 @@ body {
   height: 1px;
   background: #f3f4f6;
   margin: 10px 0;
+}
+
+/* ── Quick period buttons ─────────────────────────────────────────── */
+.db-quick-periods {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 9px;
+  padding: 4px;
+  height: 38px;
+}
+
+.db-period-btn {
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.db-period-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.db-period-btn--active {
+  background: #ff6d41;
+  color: #fff;
+}
+
+.db-period-btn--active:hover {
+  background: #e85a2f;
+  color: #fff;
+}
+
+/* ── CSV Button ──────────────────────────────────────────────────── */
+.db-csv-btn {
+  height: 38px;
+  padding: 0 14px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 9px;
+  background: #fff;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.db-csv-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.db-csv-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Bottom row (finance + top pumps side by side) ───────────────── */
+.db-bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 900px) {
+  .db-bottom-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Top Pumps Card ──────────────────────────────────────────────── */
+.db-pumps-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 6px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.db-pump-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.db-pump-row:last-child {
+  margin-bottom: 0;
+}
+
+.db-pump-rank {
+  width: 22px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #9ca3af;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.db-pump-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.db-pump-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.db-pump-bar-wrap {
+  height: 6px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.db-pump-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6d41, #ff9a7b);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.db-pump-sales {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1f3a;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Plant Map Card ──────────────────────────────────────────────── */
+.db-map-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 6px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  margin-bottom: 18px;
+}
+
+.db-map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.db-map-hint {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.db-map-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.db-plant-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 18px;
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 110px;
+  text-align: center;
+}
+
+.db-plant-pin:hover {
+  border-color: #ff6d41;
+  background: #fff5f0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 109, 65, 0.15);
+}
+
+.db-plant-pin--active {
+  border-color: #ff6d41;
+  background: #fff0eb;
+}
+
+.db-plant-pin-count {
+  font-size: 26px;
+  font-weight: 800;
+  color: #ef4444;
+  font-family: "Sora", sans-serif;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.db-plant-pin-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 2px;
+  max-width: 100px;
+  word-break: break-word;
+}
+
+.db-plant-pin-label {
+  font-size: 10px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.db-plant-detail {
+  margin-top: 20px;
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 16px 20px;
+  border: 1.5px solid #e5e7eb;
+}
+
+.db-plant-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.db-plant-detail-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1f3a;
+}
+
+.db-plant-detail-close {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: #e5e7eb;
+  color: #6b7280;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.db-plant-detail-close:hover {
+  background: #d1d5db;
+}
+
+.db-plant-detail-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.db-plant-stat {
+  flex: 1;
+  min-width: 80px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  text-align: center;
+  border: 1.5px solid transparent;
+}
+
+.db-plant-stat--total  { border-color: #e5e7eb; }
+.db-plant-stat--green  { border-color: #86efac; background: #f0fdf4; }
+.db-plant-stat--red    { border-color: #fca5a5; background: #fff5f5; }
+.db-plant-stat--blue   { border-color: #93c5fd; background: #eff6ff; }
+.db-plant-stat--amber  { border-color: #fcd34d; background: #fffbeb; }
+
+.db-plant-stat-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1a1f3a;
+  font-family: "Sora", sans-serif;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.db-plant-stat-lbl {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }

@@ -129,6 +129,87 @@ export const getMonthlyTrend = async ({ plantCode } = {}) => {
   return rows;
 };
 
+/* ── 10. Fuel / petrol pump stats ───────────────────────────────── */
+const TAX_COLS = [
+  "ts_armed_forces_tax","andhra_pradesh_tax","arunachal_pradesh_tax","assam_tax",
+  "bihar_tax","chhattisgarh_tax","delhi_tax","goa_tax","gujarat_tax","haryana_tax",
+  "himachal_pradesh_tax","jharkhand_tax","karnataka_tax","kerala_tax",
+  "madhya_pradesh_tax","maharashtra_tax","manipur_tax","meghalaya_tax",
+  "mizoram_tax","nagaland_tax","odisha_tax","punjab_tax","rajasthan_tax",
+  "sikkim_tax","tamil_nadu_tax","telangana_tax","tripura_tax",
+  "uttar_pradesh_tax","uttarakhand_tax","west_bengal_tax",
+];
+
+export const getFuelStats = async ({ from, to, plantCode } = {}) => {
+  const { clause, params } = buildDateFilter("s", from, to);
+  let sql = `SELECT COALESCE(SUM(fe.qty * fe.rate),0) AS total_sales,
+                    COUNT(DISTINCT NULLIF(fe.pump_id,'')) AS pump_count
+             FROM shipment_fuel_entries fe
+             JOIN shipment s ON s.shipment_id = fe.shipment_id
+             WHERE s.is_active = 1 ${clause}`;
+  if (plantCode) { sql += ` AND s.plant_code = ?`; params.push(plantCode); }
+  const [[row]] = await db.query(sql, params);
+  return { total_sales: Number(row.total_sales), pump_count: Number(row.pump_count) };
+};
+
+export const getTopPumps = async ({ from, to, plantCode } = {}) => {
+  const { clause, params } = buildDateFilter("s", from, to);
+  let sql = `SELECT fe.pump_id,
+                    COALESCE(SUM(fe.qty * fe.rate),0) AS total_sales,
+                    COALESCE(SUM(fe.qty),0) AS total_qty
+             FROM shipment_fuel_entries fe
+             JOIN shipment s ON s.shipment_id = fe.shipment_id
+             WHERE s.is_active = 1 AND fe.pump_id IS NOT NULL AND fe.pump_id != '' ${clause}`;
+  if (plantCode) { sql += ` AND s.plant_code = ?`; params.push(plantCode); }
+  sql += ` GROUP BY fe.pump_id ORDER BY total_sales DESC LIMIT 5`;
+  const [rows] = await db.query(sql, params);
+  return rows;
+};
+
+export const getTollStats = async ({ from, to, plantCode } = {}) => {
+  const { clause, params } = buildDateFilter("s", from, to);
+  let sql = `SELECT COALESCE(SUM(
+               CASE WHEN rtm.manual_toll_fix_toll > 0
+                    THEN rtm.manual_toll_fix_toll
+                    ELSE COALESCE(rtm.toll_amount, 0) END
+             ), 0) AS total_toll
+             FROM shipment s
+             LEFT JOIN route_toll_master rtm ON rtm.route_id = s.route_id AND rtm.vehicle_id = s.vehicle_id
+             WHERE s.is_active = 1 ${clause}`;
+  if (plantCode) { sql += ` AND s.plant_code = ?`; params.push(plantCode); }
+  const [[row]] = await db.query(sql, params);
+  return { total_toll: Number(row.total_toll) };
+};
+
+export const getTaxStats = async ({ from, to, plantCode } = {}) => {
+  const sumExpr = TAX_COLS.map(c => `COALESCE(rtx.${c}, 0)`).join(" + ");
+  const { clause, params } = buildDateFilter("s", from, to);
+  let sql = `SELECT COALESCE(SUM(${sumExpr}), 0) AS total_tax
+             FROM shipment s
+             LEFT JOIN route_tax_master rtx ON rtx.route_id = s.route_id AND rtx.vehicle_id = s.vehicle_id
+             WHERE s.is_active = 1 ${clause}`;
+  if (plantCode) { sql += ` AND s.plant_code = ?`; params.push(plantCode); }
+  const [[row]] = await db.query(sql, params);
+  return { total_tax: Number(row.total_tax) };
+};
+
+export const getPlantMapData = async ({ from, to, plantCode } = {}) => {
+  const { clause, params } = buildDateFilter("s", from, to);
+  let sql = `SELECT
+               s.raw_dispatch_plant AS plant,
+               COUNT(*) AS total,
+               SUM(CASE WHEN s.current_status = 'Delivered' THEN 1 ELSE 0 END) AS delivered,
+               SUM(CASE WHEN s.current_status != 'Delivered' THEN 1 ELSE 0 END) AS undelivered,
+               SUM(CASE WHEN s.current_status IN ('In Transit','Running') THEN 1 ELSE 0 END) AS running,
+               SUM(CASE WHEN s.approval_status IN ('ACTIVE','HOLD') THEN 1 ELSE 0 END) AS dispatched
+             FROM shipment s
+             WHERE s.is_active = 1 AND s.raw_dispatch_plant IS NOT NULL ${clause}`;
+  if (plantCode) { sql += ` AND s.plant_code = ?`; params.push(plantCode); }
+  sql += ` GROUP BY s.raw_dispatch_plant ORDER BY undelivered DESC`;
+  const [rows] = await db.query(sql, params);
+  return rows;
+};
+
 /* ── MASTER: all KPIs in one call ───────────────────────────────── */
 export const getDashboardKPIs = async ({ from, to, plantCode } = {}) => {
   const [
@@ -141,6 +222,11 @@ export const getDashboardKPIs = async ({ from, to, plantCode } = {}) => {
     paidFunds,
     statusBreakdown,
     monthlyTrend,
+    fuelStats,
+    topPumps,
+    tollStats,
+    taxStats,
+    plantMapData,
   ] = await Promise.all([
     getTotalShipments({ from, to, plantCode }),
     getDeliveredShipments({ from, to, plantCode }),
@@ -151,6 +237,11 @@ export const getDashboardKPIs = async ({ from, to, plantCode } = {}) => {
     getPaidFunds({ from, to, plantCode }),
     getStatusBreakdown({ from, to, plantCode }),
     getMonthlyTrend({ plantCode }),
+    getFuelStats({ from, to, plantCode }),
+    getTopPumps({ from, to, plantCode }),
+    getTollStats({ from, to, plantCode }),
+    getTaxStats({ from, to, plantCode }),
+    getPlantMapData({ from, to, plantCode }),
   ]);
 
   return {
@@ -163,5 +254,10 @@ export const getDashboardKPIs = async ({ from, to, plantCode } = {}) => {
     paidFunds,
     statusBreakdown,
     monthlyTrend,
+    fuelStats,
+    topPumps,
+    tollStats,
+    taxStats,
+    plantMapData,
   };
 };

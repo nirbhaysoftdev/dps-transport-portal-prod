@@ -150,6 +150,8 @@ export default function ShipmentView({ shipmentId, onBack }) {
       toll_amount: d.toll_amount ?? "",
       taxes,
       fuel_entries: fuelEntries,
+      driver_name: "",
+      dl_number: "",
     });
     // Reset POD state when reinitialising
     setPodFile(null);
@@ -158,6 +160,23 @@ export default function ShipmentView({ shipmentId, onBack }) {
   };
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+
+  // Debounced DL lookup in edit mode — autofill driver name if found in driver_master
+  useEffect(() => {
+    if (!form.dl_number?.trim()) return;
+    const t = setTimeout(async () => {
+      try {
+        const res  = await apiFetch(`/api/drivers/search?dl=${encodeURIComponent(form.dl_number.trim())}`);
+        const json = await res.json();
+        if (json.found && json.driver?.driver_name) {
+          setForm(prev => ({ ...prev, driver_name: json.driver.driver_name }));
+        }
+      } catch {
+        // non-blocking
+      }
+    }, 500);
+    return () => clearTimeout(t);
+  }, [form.dl_number]);
 
   /* ── Fuel entry handlers ───────────────────────────────────────── */
   const handleFuelChange = (index, field, value) => {
@@ -271,9 +290,11 @@ export default function ShipmentView({ shipmentId, onBack }) {
           reason_for_delay: form.reason_for_delay || null,
           communicate_to_alcop: form.communicate_to_alcop || null,
           route_id: data.route_id,
+          vehicle_id: data.vehicle_id,
           toll: { manual_toll_fix_toll: form.toll_manual, toll_amount: form.toll_amount },
           tax: taxPayload,
           fuel_entries: form.fuel_entries,
+          driver: (form.driver_name && form.dl_number) ? { driver_name: form.driver_name, dl_number: form.dl_number } : null,
         }),
       });
 
@@ -347,10 +368,10 @@ export default function ShipmentView({ shipmentId, onBack }) {
   };
 
   /* ── Fund Request Readiness Check ────────────────────────────────── */
+  // Tax can be null/0 for a valid matched route — only fuel and toll are required
   const isFundReady = isHold
     && calcFuelTotal() > 0
-    && calcTollTotal() > 0
-    && calcTaxTotal() > 0;
+    && calcTollTotal() > 0;
 
   /* ── Fund Request Handler ──────────────────────────────────────── */
   const handleFundRequest = async () => {
@@ -393,6 +414,10 @@ export default function ShipmentView({ shipmentId, onBack }) {
                 ? <button className="sv-edit-btn" onClick={() => { setEditMode(true); setDeliveredErrors([]); }}>✏ Edit</button>
                 : (isApproval ? <span className="sv-view-only-badge">⏳ Awaiting Approval</span> : isActive ? <span className="sv-view-only-badge">✅ Approved</span> : isHold ? <span className="sv-view-only-badge">🔒 Read Only (Hold)</span> : <span className="sv-view-only-badge">👁 View Only</span>)
               }
+              {/* Fund Generated badge — persistent once shipment is ACTIVE */}
+              {isActive && (
+                <span className="sv-fund-generated-badge">✅ Fund Generated</span>
+              )}
               {/* Generate Fund Request — only visible for HOLD shipments when all cost data is filled */}
               {isHold && isFundReady && !fundSuccess && (
                 <button
@@ -552,9 +577,21 @@ export default function ShipmentView({ shipmentId, onBack }) {
 
         {/* Driver */}
         <div className="sv-card">
-          <div className="sv-card-title">Driver</div>
-          <InfoRow label="Name" value={data.driver_name} />
-          <InfoRow label="DL Number" value={data.driver_dl} />
+          <div className="sv-card-title">
+            Driver
+            {editMode && <span className="sv-editable-hint">Editing</span>}
+          </div>
+          {editMode ? (
+            <>
+              <EditField label="Driver Name" name="driver_name" value={form.driver_name} onChange={handleChange} />
+              <EditField label="DL Number"   name="dl_number"   value={form.dl_number}   onChange={handleChange} />
+            </>
+          ) : (
+            <>
+              <InfoRow label="Name" value={data.driver_name} />
+              <InfoRow label="DL Number" value={data.driver_dl} />
+            </>
+          )}
           <InfoRow label="Payment" value={data.driver_payment ? `₹${Number(data.driver_payment).toLocaleString("en-IN")}` : null} />
           <InfoRow label="Return Fare" value={data.return_fare ? `₹${Number(data.return_fare).toLocaleString("en-IN")}` : null} />
         </div>
@@ -567,8 +604,8 @@ export default function ShipmentView({ shipmentId, onBack }) {
           </div>
           {editMode ? (
             <>
-              <EditField label="Manual Fix Toll (₹)" name="toll_manual" value={form.toll_manual} onChange={handleChange} type="number" disabled={data.manual_toll_fix_toll != null && data.manual_toll_fix_toll !== ""} />
-              <EditField label="Toll Amount (₹)" name="toll_amount" value={form.toll_amount} onChange={handleChange} type="number" disabled={data.toll_amount != null && data.toll_amount !== ""} />
+              <EditField label="Manual Fix Toll (₹)" name="toll_manual" value={form.toll_manual} onChange={handleChange} type="number" disabled={!isAdmin && (data.manual_toll_fix_toll != null && data.manual_toll_fix_toll !== "")} />
+              <EditField label="Toll Amount (₹)" name="toll_amount" value={form.toll_amount} onChange={handleChange} type="number" disabled={!isAdmin && (data.toll_amount != null && data.toll_amount !== "")} />
             </>
           ) : (
             <>
@@ -730,7 +767,7 @@ export default function ShipmentView({ shipmentId, onBack }) {
                     <div className="sv-edit-field" style={{ flex: 2 }}>
                       <label className="sv-edit-label">State</label>
                       <select className="sv-edit-input" value={tax.col}
-                        disabled={data[tax.col] != null && data[tax.col] !== ""}
+                        disabled={!isAdmin && (data[tax.col] != null && data[tax.col] !== "")}
                         onChange={e => updateTax(idx, "col", e.target.value)}>
                         {STATE_TAX_COLUMNS
                           .filter(s => s.col === tax.col || !usedCols.includes(s.col))
@@ -740,10 +777,10 @@ export default function ShipmentView({ shipmentId, onBack }) {
                     <div className="sv-edit-field" style={{ flex: 2 }}>
                       <label className="sv-edit-label">Tax Amount (₹)</label>
                       <input className="sv-edit-input" type="number" value={tax.amount}
-                        disabled={data[tax.col] != null && data[tax.col] !== "" && tax.col !== "tamil_nadu_tax"}
+                        disabled={!isAdmin && (data[tax.col] != null && data[tax.col] !== "" && tax.col !== "tamil_nadu_tax")}
                         onChange={e => updateTax(idx, "amount", e.target.value)} placeholder="0.00" />
                     </div>
-                    {(data[tax.col] == null || data[tax.col] === "") && <button className="sv-remove-tax" onClick={() => removeTax(idx)}>✕</button>}
+                    {(isAdmin || data[tax.col] == null || data[tax.col] === "") && <button className="sv-remove-tax" onClick={() => removeTax(idx)}>✕</button>}
                   </div>
                 ))}
                 {usedCols.length < STATE_TAX_COLUMNS.length && (

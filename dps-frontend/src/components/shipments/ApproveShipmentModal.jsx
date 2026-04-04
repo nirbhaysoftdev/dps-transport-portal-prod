@@ -58,7 +58,7 @@ export default function ApproveShipmentModal({ shipment, onClose, onApproved }) 
   const [error, setError]       = useState(null);
   const [matchInfo, setMatchInfo] = useState({ route: null, vehicle: null, driver: null });
 
-  // Pre-fill from raw_ fields
+  // Pre-fill route and vehicle from raw_ fields; driver fields are always left blank
   useEffect(() => {
     if (!shipment) return;
     setForm(prev => ({
@@ -71,22 +71,37 @@ export default function ApproveShipmentModal({ shipment, onClose, onApproved }) 
       material_no:       shipment.raw_vehicle_material_no   || "",
       model:             shipment.raw_vehicle_model         || "",
       avg:               shipment.raw_vehicle_avg           || "",
-      driver_name:       shipment.raw_driver_name           || "",
-      dl_number:         shipment.raw_dl_number             || "",
+      // driver_name and dl_number intentionally not pre-filled — must be entered manually each time
     }));
   }, [shipment]);
 
-  // Debounced match check against existing masters
+  // Debounced DL lookup — autofill driver name if found in driver_master
+  useEffect(() => {
+    if (!form.dl_number?.trim()) return;
+    const t = setTimeout(async () => {
+      try {
+        const res  = await apiFetch(`/api/drivers/search?dl=${encodeURIComponent(form.dl_number.trim())}`);
+        const json = await res.json();
+        if (json.found && json.driver?.driver_name) {
+          setForm(prev => ({ ...prev, driver_name: json.driver.driver_name }));
+        }
+      } catch {
+        // non-blocking
+      }
+    }, 500);
+    return () => clearTimeout(t);
+  }, [form.dl_number]);
+
+  // Debounced match check against existing masters (route + vehicle only; driver is not auto-filled)
   useEffect(() => {
     const check = async () => {
-      if (!form.dispatch_plant && !form.material_no && !form.dl_number) return;
+      if (!form.dispatch_plant && !form.material_no) return;
       try {
         const params = new URLSearchParams({
           dispatch_plant:    form.dispatch_plant,
           delivery_location: form.delivery_location,
           dealer_name:       form.dealer_name,
           material_no:       form.material_no,
-          dl_number:         form.dl_number,
         });
         const res  = await apiFetch(`/api/shipments/check-masters?${params}`);
         const json = await res.json();
@@ -97,7 +112,7 @@ export default function ApproveShipmentModal({ shipment, onClose, onApproved }) 
     };
     const t = setTimeout(check, 500);
     return () => clearTimeout(t);
-  }, [form.dispatch_plant, form.delivery_location, form.dealer_name, form.material_no, form.dl_number]);
+  }, [form.dispatch_plant, form.delivery_location, form.dealer_name, form.material_no]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
