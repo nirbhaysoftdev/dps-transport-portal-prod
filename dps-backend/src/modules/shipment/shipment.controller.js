@@ -50,7 +50,7 @@ export const updateShipmentHandler = async (req, res) => {
       }
     }
     
-    await updateShipment(shipmentId, req.body);
+    await updateShipment(shipmentId, req.body, userRole);
     res.json({ success: true, message: "Shipment updated" });
   } catch (err) {
     console.error("❌ PUT /shipments/:id:", err.sqlMessage || err);

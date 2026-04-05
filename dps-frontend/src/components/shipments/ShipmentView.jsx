@@ -236,10 +236,6 @@ export default function ShipmentView({ shipmentId, onBack }) {
       if (!val || String(val).trim() === "") missing.push(label);
     });
 
-    // Toll: at least one toll field must be filled
-    const hasToll = Number(form.toll_manual) > 0 || Number(form.toll_amount) > 0;
-    if (!hasToll) missing.push("Toll (Manual Fix Toll or Toll Amount)");
-
     // POD: either existing pod_path on record OR new file selected
     const hasPod = (data?.pod_path && !podFile) || podFile;
     if (!hasPod) missing.push("POD (Proof of Delivery image)");
@@ -369,9 +365,7 @@ export default function ShipmentView({ shipmentId, onBack }) {
 
   /* ── Fund Request Readiness Check ────────────────────────────────── */
   // Tax can be null/0 for a valid matched route — only fuel and toll are required
-  const isFundReady = isHold
-    && calcFuelTotal() > 0
-    && calcTollTotal() > 0;
+  const isFundReady = isHold && calcFuelTotal() > 0;
 
   /* ── Fund Request Handler ──────────────────────────────────────── */
   const handleFundRequest = async () => {
@@ -604,8 +598,8 @@ export default function ShipmentView({ shipmentId, onBack }) {
           </div>
           {editMode ? (
             <>
-              <EditField label="Manual Fix Toll (₹)" name="toll_manual" value={form.toll_manual} onChange={handleChange} type="number" disabled={!isAdmin && (data.manual_toll_fix_toll != null && data.manual_toll_fix_toll !== "")} />
-              <EditField label="Toll Amount (₹)" name="toll_amount" value={form.toll_amount} onChange={handleChange} type="number" disabled={!isAdmin && (data.toll_amount != null && data.toll_amount !== "")} />
+              <EditField label="Manual Fix Toll (₹)" name="toll_manual" value={form.toll_manual} onChange={handleChange} type="number" disabled={!isAdmin} />
+              <EditField label="Toll Amount (₹)" name="toll_amount" value={form.toll_amount} onChange={handleChange} type="number" disabled={!isAdmin} />
             </>
           ) : (
             <>
@@ -767,7 +761,7 @@ export default function ShipmentView({ shipmentId, onBack }) {
                     <div className="sv-edit-field" style={{ flex: 2 }}>
                       <label className="sv-edit-label">State</label>
                       <select className="sv-edit-input" value={tax.col}
-                        disabled={!isAdmin && (data[tax.col] != null && data[tax.col] !== "")}
+                        disabled={!isAdmin}
                         onChange={e => updateTax(idx, "col", e.target.value)}>
                         {STATE_TAX_COLUMNS
                           .filter(s => s.col === tax.col || !usedCols.includes(s.col))
@@ -777,13 +771,13 @@ export default function ShipmentView({ shipmentId, onBack }) {
                     <div className="sv-edit-field" style={{ flex: 2 }}>
                       <label className="sv-edit-label">Tax Amount (₹)</label>
                       <input className="sv-edit-input" type="number" value={tax.amount}
-                        disabled={!isAdmin && (data[tax.col] != null && data[tax.col] !== "" && tax.col !== "tamil_nadu_tax")}
+                        disabled={!isAdmin}
                         onChange={e => updateTax(idx, "amount", e.target.value)} placeholder="0.00" />
                     </div>
-                    {(isAdmin || data[tax.col] == null || data[tax.col] === "") && <button className="sv-remove-tax" onClick={() => removeTax(idx)}>✕</button>}
+                    {isAdmin && <button className="sv-remove-tax" onClick={() => removeTax(idx)}>✕</button>}
                   </div>
                 ))}
-                {usedCols.length < STATE_TAX_COLUMNS.length && (
+                {isAdmin && usedCols.length < STATE_TAX_COLUMNS.length && (
                   <button className="sv-add-tax-btn" onClick={addTax}>+ Add State Tax</button>
                 )}
               </>
@@ -791,14 +785,14 @@ export default function ShipmentView({ shipmentId, onBack }) {
           })() : (
             <div className="sv-tax-grid">
               {STATE_TAX_COLUMNS
-                .filter(({ col }) => data[col] != null && Number(data[col]) > 0)
+                .filter(({ col }) => data[col] != null)
                 .map(({ col, label }) => (
                   <div key={col} className="sv-tax-cell">
                     <span className="sv-tax-label">{label}</span>
                     <span className="sv-tax-val">₹{Number(data[col]).toLocaleString("en-IN")}</span>
                   </div>
                 ))}
-              {STATE_TAX_COLUMNS.filter(({ col }) => data[col] != null && Number(data[col]) > 0).length === 0 && (
+              {STATE_TAX_COLUMNS.filter(({ col }) => data[col] != null).length === 0 && (
                 <p className="sv-na" style={{ padding: "8px 0" }}>No state taxes recorded</p>
               )}
             </div>

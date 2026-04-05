@@ -277,7 +277,7 @@ if (routeId && driver_route) {
 }
 
   // ── 5. Route Toll ───────────────────────────────────────────────
-  if (route_toll && (route_toll.manual_toll_fix_toll || route_toll.toll_amount)) {
+  if (route_toll && (route_toll.manual_toll_fix_toll != null || route_toll.toll_amount != null)) {
     const [existing] = await db.query(
       `SELECT route_toll_id FROM route_toll_master WHERE route_id = ? AND vehicle_id = ? LIMIT 1`,
       [routeId, vehicleId]
@@ -287,13 +287,13 @@ if (routeId && driver_route) {
         `UPDATE route_toll_master
          SET manual_toll_fix_toll = ?, toll_amount = ?
          WHERE route_toll_id = ?`,
-        [route_toll.manual_toll_fix_toll || null, route_toll.toll_amount || null, existing[0].route_toll_id]
+        [route_toll.manual_toll_fix_toll === "" ? null : (route_toll.manual_toll_fix_toll ?? null), route_toll.toll_amount === "" ? null : (route_toll.toll_amount ?? null), existing[0].route_toll_id]
       );
     } else {
       await db.query(
         `INSERT INTO route_toll_master (route_id, vehicle_id, manual_toll_fix_toll, toll_amount, is_active)
          VALUES (?, ?, ?, ?, 1)`,
-        [routeId, vehicleId, route_toll.manual_toll_fix_toll || null, route_toll.toll_amount || null]
+        [routeId, vehicleId, route_toll.manual_toll_fix_toll === "" ? null : (route_toll.manual_toll_fix_toll ?? null), route_toll.toll_amount === "" ? null : (route_toll.toll_amount ?? null)]
       );
     }
   }
@@ -519,7 +519,7 @@ export const getShipmentById = async (shipmentId) => {
 /* ================================================================
    UPDATE SHIPMENT (for View/Edit page)
    ================================================================ */
-export const updateShipment = async (shipmentId, data) => {
+export const updateShipment = async (shipmentId, data, userRole = "admin") => {
   await db.query(
     `UPDATE shipment SET
       current_status          = ?,
@@ -543,8 +543,8 @@ export const updateShipment = async (shipmentId, data) => {
     await replaceFuelEntries(shipmentId, data.fuel_entries);
   }
 
-  // Update toll if provided — upsert so admin overrides always persist
-  if (data.toll && data.route_id && data.vehicle_id) {
+  // Update toll if provided — admin only
+  if (userRole === "admin" && data.toll && data.route_id && data.vehicle_id) {
     const [existing] = await db.query(
       `SELECT route_toll_id FROM route_toll_master WHERE route_id = ? AND vehicle_id = ? LIMIT 1`,
       [data.route_id, data.vehicle_id]
@@ -552,19 +552,19 @@ export const updateShipment = async (shipmentId, data) => {
     if (existing.length > 0) {
       await db.query(
         `UPDATE route_toll_master SET manual_toll_fix_toll = ?, toll_amount = ? WHERE route_toll_id = ?`,
-        [data.toll.manual_toll_fix_toll || null, data.toll.toll_amount || null, existing[0].route_toll_id]
+        [data.toll.manual_toll_fix_toll === "" ? null : (data.toll.manual_toll_fix_toll ?? null), data.toll.toll_amount === "" ? null : (data.toll.toll_amount ?? null), existing[0].route_toll_id]
       );
     } else {
       await db.query(
         `INSERT INTO route_toll_master (route_id, vehicle_id, manual_toll_fix_toll, toll_amount, is_active)
          VALUES (?, ?, ?, ?, 1)`,
-        [data.route_id, data.vehicle_id, data.toll.manual_toll_fix_toll || null, data.toll.toll_amount || null]
+        [data.route_id, data.vehicle_id, data.toll.manual_toll_fix_toll === "" ? null : (data.toll.manual_toll_fix_toll ?? null), data.toll.toll_amount === "" ? null : (data.toll.toll_amount ?? null)]
       );
     }
   }
 
-  // Update tax if provided — upsert so admin overrides always persist
-  if (data.tax && data.route_id && data.vehicle_id) {
+  // Update tax if provided — admin only
+  if (userRole === "admin" && data.tax && data.route_id && data.vehicle_id) {
     const validCols = Object.keys(data.tax).filter(col => STATE_TAX_COLUMNS.includes(col));
     if (validCols.length > 0) {
       const [existing] = await db.query(
@@ -786,8 +786,7 @@ export const generateFundRequest = async (shipmentId) => {
   if (fuelTotal <= 0) missing.push("Fuel (at least one fuel entry with qty + rate)");
 
   // Toll
-  const hasToll = Number(shipment.manual_toll_fix_toll) > 0 || Number(shipment.toll_amount) > 0;
-  if (!hasToll) missing.push("Toll (Manual Fix Toll or Toll Amount)");
+  // Toll is optional — null or 0 is acceptable
 
   // Tax is optional — null or 0 is acceptable when route-vehicle is matched
 
