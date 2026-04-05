@@ -126,7 +126,7 @@ export default function ShipmentView({ shipmentId, onBack }) {
   const initForm = (d) => {
     if (!d) return;
     const taxes = STATE_TAX_COLUMNS
-      .filter(({ col }) => d[col] != null && Number(d[col]) > 0)
+      .filter(({ col }) => d[col] != null)
       .map(({ col, label }) => ({ col, label, amount: d[col] }));
 
     // Initialize fuel entries from normalized data

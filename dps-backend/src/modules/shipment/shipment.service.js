@@ -477,7 +477,7 @@ export const getShipmentById = async (shipmentId) => {
     `SELECT
       s.shipment_id, s.shipment_no, s.plant_code, s.current_status, s.approval_status,
       s.shipment_date, s.billing_doc_number, s.billing_date,
-      s.chassis_no, s.engine_no, s.allocation_date, s.dispatch_date,
+      s.chassis_no, s.engine_no, s.allocation_date, DATE_FORMAT(s.dispatch_date, '%Y-%m-%d') AS dispatch_date,
       s.estimated_delivery_date, s.delivery_date, s.reason_for_delay,
       s.communicate_to_alcop, s.pod_path, s.is_active,
       s.route_id, s.vehicle_id, s.driver_route_id,
